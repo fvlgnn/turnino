@@ -50,7 +50,3 @@ See the [roadmap](docs/roadmap.md), [architecture](docs/architecture.md), and [d
 ## License
 
 Turnino is free software licensed under the [GNU Affero General Public License v3.0](LICENSE). Modified versions made available over a network must offer their corresponding source to their users. See [docs/licensing.md](docs/licensing.md) for the practical rationale.
-
-## Legacy versions
-
-Historical PHP sources are kept privately under `.archivio/legacy/` and are ignored by Git and Docker. They are references for the rewrite, not part of the public project.

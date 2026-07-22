@@ -12,4 +12,4 @@ Turnino is not open for general contributions yet, but early design feedback is 
 
 Use Conventional Commit-style subjects where practical, for example `feat: add counter registration` or `fix: serialize number allocation`.
 
-Do not include production data, credentials, session identifiers, personal data, or unsanitized legacy database exports.
+Do not include production data, credentials, session identifiers, personal data, or database exports.

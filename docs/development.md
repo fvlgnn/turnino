@@ -34,4 +34,4 @@ CI verifies formatting, `go vet`, race-enabled tests, compilation, and a complet
 4. The same workflow publishes `ghcr.io/fvlgnn/turnino` for AMD64 and ARM64.
 5. Make the GHCR package public after its first publication if the repository settings do not do so automatically.
 
-Do not create a public tag until the public tree has been checked for private legacy data.
+Do not create a public tag until the public tree has been checked for private data and credentials.

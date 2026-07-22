@@ -3,7 +3,7 @@
 ## Prima della pubblicazione
 
 - [ ] Inizializzare/pubblicare il repository sotto `github.com/fvlgnn`.
-- [ ] Controllare che `.archivio/`, `NOTE.md`, database e segreti non siano tracciati.
+- [ ] Controllare che `NOTE.md`, database e segreti non siano tracciati.
 - [ ] Aggiungere una pagina `About / Source` visibile nell'interfaccia per AGPL-3.0.
 - [ ] Definire copyright e contatto di sicurezza pubblici.
 - [ ] Proteggere `main` e richiedere CI verde per le pull request.

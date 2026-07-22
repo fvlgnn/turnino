@@ -14,4 +14,4 @@ Practical examples:
 
 The application UI must eventually include a visible source-code link so deployments and downstream modifications can satisfy the network-use provision cleanly.
 
-Private material under `.archivio/` is not part of the repository and is not automatically covered by this license. Third-party assets and dependencies retain their own licenses. This document is a practical summary, not legal advice.
+Third-party assets and dependencies retain their own licenses. This document is a practical summary, not legal advice.
