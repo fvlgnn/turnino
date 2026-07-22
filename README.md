@@ -1,0 +1,56 @@
+# Turnino
+
+> **Your turn, made simple.**
+
+Tiny self-hosted queue calling and display system. Built with Go, SQLite and Server-Sent Events; designed for Raspberry Pi and Docker.
+
+Turnino is the modern rewrite of a queue display system that has run for years on modest hardware, including Raspberry Pi. It keeps the original idea: one server, a browser for each operator, a public monitor, optional counter displays, and a small administration page.
+
+The project is in its bootstrap phase. The HTTP foundation and delivery pipeline are present; queue operations and persistence are the next milestone.
+
+## Principles
+
+Turnino follows the KISS principle: one process, one database, a few browser views, and no unnecessary infrastructure.
+
+- Keep installation and operation simple.
+- Run well on low-cost ARM hardware.
+- Use one process and one SQLite database.
+- Prefer server-rendered HTML and small amounts of JavaScript.
+- Use Server-Sent Events for live display updates.
+- Add features only when they preserve the core workflow.
+
+## Quick start
+
+Go 1.25 or newer is required.
+
+```sh
+make dev
+```
+
+The defaults need no configuration. Copy values from `.env.example` into your shell environment when you want to override them.
+
+Open <http://localhost:8080>. The health endpoint is available at <http://localhost:8080/healthz>.
+
+With Docker:
+
+```sh
+docker compose up --build
+```
+
+Runtime data is written to `./data` for native development and to the `turnino-data` volume with Compose.
+
+## Why Turnino?
+
+Turnino combines the English word “turn” with the Italian diminutive suffix “-ino”. It describes a small, friendly system that tells people when it is their turn. The name also continues a personal tradition started with Gianino, the author's home automation project.
+
+## Project status
+
+See the [roadmap](docs/roadmap.md), [architecture](docs/architecture.md), and [development guide](docs/development.md). Italian project notes are available in [docs/it/README.md](docs/it/README.md).
+
+## License
+
+Turnino is free software licensed under the [GNU Affero General Public License v3.0](LICENSE). Modified versions made available over a network must offer their corresponding source to their users. See [docs/licensing.md](docs/licensing.md) for the practical rationale.
+
+## Legacy versions
+
+Historical PHP sources are kept privately under `.archivio/legacy/` and are ignored by Git and Docker. They are references for the rewrite, not part of the public project.
