@@ -1,27 +1,28 @@
 {{define "admin-login.html"}}
 <!doctype html>
-<html lang="en">
+<html lang="{{.Lang}}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <title>Administration · Turnino</title>
+    <title>{{t .Lang "common.administration"}} · Turnino</title>
     <link rel="stylesheet" href="/static/app.css">
   </head>
   <body>
     <main class="panel narrow">
+      <nav class="language-switch" aria-label="{{t .Lang "common.language"}}"><a href="?lang=en">{{t .Lang "common.english"}}</a><a href="?lang=it">{{t .Lang "common.italian"}}</a></nav>
       <a class="brand" href="/">Turnino</a>
-      <h1 class="page-title">Administration</h1>
+      <h1 class="page-title">{{t .Lang "common.administration"}}</h1>
       {{if .Error}}<p class="alert error">{{.Error}}</p>{{end}}
       {{if .AdminConfigured}}
       <form method="post" action="/admin/login" class="stack">
-        <label>Administrator token
+        <label>{{t .Lang "admin.token_label"}}
           <input type="password" name="token" required autofocus autocomplete="current-password">
         </label>
-        <button type="submit">Sign in</button>
+        <button type="submit">{{t .Lang "admin.sign_in"}}</button>
       </form>
       {{else}}
-      <p class="alert">Administration is not configured. Set <code>TURNINO_ADMIN_TOKEN</code> and restart Turnino once.</p>
+      <p class="alert">{{t .Lang "admin.not_configured"}}</p>
       {{end}}
     </main>
   </body>

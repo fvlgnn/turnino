@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,7 +21,7 @@ import (
 
 // files contains the complete browser UI so releases remain single binaries.
 //
-//go:embed templates/*.html static/*
+//go:embed templates/*.html static/* translations/*.json
 var files embed.FS
 
 type Store interface {
@@ -39,6 +40,7 @@ type app struct {
 	version  string
 	store    Store
 	tmpl     *template.Template
+	catalog  catalog
 	sessions sessionStore
 }
 
@@ -54,6 +56,7 @@ type sessionStore struct {
 
 type pageData struct {
 	Version         string
+	Lang            string
 	AdminConfigured bool
 	CSRFToken       string
 	Error           string
@@ -63,7 +66,11 @@ type pageData struct {
 }
 
 func New(version string, store Store) (http.Handler, error) {
-	tmpl, err := template.ParseFS(files, "templates/*.html")
+	catalog, err := loadCatalog()
+	if err != nil {
+		return nil, err
+	}
+	tmpl, err := template.New("").Funcs(template.FuncMap{"t": catalog.text}).ParseFS(files, "templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("parse templates: %w", err)
 	}
@@ -75,6 +82,7 @@ func New(version string, store Store) (http.Handler, error) {
 		version: version,
 		store:   store,
 		tmpl:    tmpl,
+		catalog: catalog,
 		sessions: sessionStore{
 			sessions: make(map[string]session),
 		},
@@ -91,7 +99,7 @@ func New(version string, store Store) (http.Handler, error) {
 	mux.HandleFunc("POST /admin/counters/{counterID}/revoke", application.revokeCounter)
 	mux.HandleFunc("POST /admin/counters/{counterID}/rotate", application.rotateCounter)
 	mux.HandleFunc("POST /admin/counters/{counterID}/reactivate", application.reactivateCounter)
-	return mux, nil
+	return application.languageSelection(mux), nil
 }
 
 func (a *app) home(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +107,7 @@ func (a *app) home(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	a.render(w, "index.html", pageData{Version: a.version})
+	a.render(w, "index.html", a.page(r))
 }
 
 func (a *app) admin(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +121,9 @@ func (a *app) admin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not check administrator configuration", http.StatusInternalServerError)
 		return
 	}
-	a.render(w, "admin-login.html", pageData{Version: a.version, AdminConfigured: configured})
+	data := a.page(r)
+	data.AdminConfigured = configured
+	a.render(w, "admin-login.html", data)
 }
 
 func (a *app) login(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +140,10 @@ func (a *app) login(w http.ResponseWriter, r *http.Request) {
 	}
 	if !valid {
 		w.WriteHeader(http.StatusUnauthorized)
-		a.render(w, "admin-login.html", pageData{Version: a.version, AdminConfigured: true, Error: "Invalid administrator token."})
+		data := a.page(r)
+		data.AdminConfigured = true
+		data.Error = a.message(r, "admin.invalid_token")
+		a.render(w, "admin-login.html", data)
 		return
 	}
 	sessionID, err := credential.Generate()
@@ -172,7 +185,7 @@ func (a *app) createQueue(w http.ResponseWriter, r *http.Request) {
 	minValue, minErr := strconv.Atoi(r.PostFormValue("min_value"))
 	maxValue, maxErr := strconv.Atoi(r.PostFormValue("max_value"))
 	if digitsErr != nil || minErr != nil || maxErr != nil {
-		a.redirectAdminError(w, r, "Number policy contains invalid values.")
+		a.redirectAdminError(w, r, a.message(r, "admin.invalid_number_policy"))
 		return
 	}
 	_, err := a.store.CreateQueue(r.Context(), domain.CreateQueueParams{
@@ -212,7 +225,7 @@ func (a *app) revokeCounter(w http.ResponseWriter, r *http.Request) {
 	}
 	counterID, err := parseID(r.PathValue("counterID"))
 	if err != nil {
-		a.redirectAdminError(w, r, "Invalid counter ID.")
+		a.redirectAdminError(w, r, a.message(r, "admin.invalid_counter_id"))
 		return
 	}
 	if err := a.store.RevokeCounter(r.Context(), counterID); err != nil {
@@ -229,7 +242,7 @@ func (a *app) rotateCounter(w http.ResponseWriter, r *http.Request) {
 	}
 	counterID, err := parseID(r.PathValue("counterID"))
 	if err != nil {
-		a.redirectAdminError(w, r, "Invalid counter ID.")
+		a.redirectAdminError(w, r, a.message(r, "admin.invalid_counter_id"))
 		return
 	}
 	token, err := credential.Generate()
@@ -252,7 +265,7 @@ func (a *app) reactivateCounter(w http.ResponseWriter, r *http.Request) {
 	}
 	counterID, err := parseID(r.PathValue("counterID"))
 	if err != nil {
-		a.redirectAdminError(w, r, "Invalid counter ID.")
+		a.redirectAdminError(w, r, a.message(r, "admin.invalid_counter_id"))
 		return
 	}
 	token, err := credential.Generate()
@@ -280,10 +293,61 @@ func (a *app) renderDashboard(w http.ResponseWriter, r *http.Request, current se
 		http.Error(w, "Could not load counters", http.StatusInternalServerError)
 		return
 	}
-	a.render(w, "admin.html", pageData{
-		Version: a.version, CSRFToken: current.CSRFToken, Error: r.URL.Query().Get("error"),
-		Queues: queues, Counters: counters, NewCounterToken: newCounterToken,
+	data := a.page(r)
+	data.CSRFToken = current.CSRFToken
+	data.Error = r.URL.Query().Get("error")
+	data.Queues = queues
+	data.Counters = counters
+	data.NewCounterToken = newCounterToken
+	a.render(w, "admin.html", data)
+}
+
+func (a *app) languageSelection(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requested := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("lang")))
+		if r.Method == http.MethodGet && (requested == "en" || requested == "it") {
+			http.SetCookie(w, &http.Cookie{
+				Name: "turnino_lang", Value: requested, Path: "/", MaxAge: 365 * 24 * 60 * 60,
+				Secure: r.TLS != nil, SameSite: http.SameSiteLaxMode,
+			})
+			target := *r.URL
+			query := target.Query()
+			query.Del("lang")
+			target.RawQuery = query.Encode()
+			http.Redirect(w, r, target.String(), http.StatusSeeOther)
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
+}
+
+func (a *app) page(r *http.Request) pageData {
+	return pageData{Version: a.version, Lang: a.language(r)}
+}
+
+func (a *app) message(r *http.Request, key string) string {
+	return a.catalog.text(a.language(r), key)
+}
+
+func (a *app) language(r *http.Request) string {
+	if cookie, err := r.Cookie("turnino_lang"); err == nil {
+		if cookie.Value == "en" || cookie.Value == "it" {
+			return cookie.Value
+		}
+	}
+	for _, preference := range strings.Split(r.Header.Get("Accept-Language"), ",") {
+		language := strings.ToLower(strings.TrimSpace(strings.SplitN(preference, ";", 2)[0]))
+		if separator := strings.IndexAny(language, "-_"); separator >= 0 {
+			language = language[:separator]
+		}
+		if language == "it" {
+			return "it"
+		}
+		if language == "en" {
+			return "en"
+		}
+	}
+	return defaultLanguage
 }
 
 func (a *app) authorizeForm(w http.ResponseWriter, r *http.Request) (session, bool) {

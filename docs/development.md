@@ -20,6 +20,16 @@ Configuration is documented in `.env.example`. Go does not load `.env` itself; e
 
 For a new database, generate a random administration token, set it as `TURNINO_ADMIN_TOKEN`, and start Turnino once. The credential is bootstrapped only when none exists and cannot be overwritten by changing the environment variable. Keep the original token outside the repository; administration requests use it as a Bearer token.
 
+## Translations
+
+Browser messages are stored in `internal/webui/translations/en.json` and `it.json`. Add the English key first, add its Italian equivalent, then reference it from a template with:
+
+```gotemplate
+{{t .Lang "section.message"}}
+```
+
+Keep keys flat and grouped by feature. Tests ensure that every English key has an Italian translation and that missing localized values fall back to English.
+
 ## Module path
 
 The Go module is `github.com/fvlgnn/turnino`.

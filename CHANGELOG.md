@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Write-once administrator bootstrap and Bearer-protected administration endpoints without users or roles.
 - Server-rendered administration UI with in-memory sessions, CSRF protection and queue/counter management.
 - Explicit offline administrator reset command and SQLite/WSL troubleshooting guidance.
+- Embedded English and Italian JSON dictionaries, template translation helpers and browser language persistence.
 
 ## [0.1.0] - 2026-07-24
 

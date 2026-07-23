@@ -18,7 +18,7 @@
 - Operator, public monitor and counter display pages
 - SSE updates with reconnect and a conservative polling fallback
 - [x] Essential administration with browser login, protected forms and offline credential recovery
-- English and Italian UI using embedded JSON dictionaries, with English as the fallback language
+- [x] English and Italian UI using embedded JSON dictionaries, with English as the fallback language
 - Backup/export and sanitized demonstration data
 
 ## v0.2 — Adaptation and polish

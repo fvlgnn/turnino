@@ -1,6 +1,6 @@
 {{define "index.html"}}
 <!doctype html>
-<html lang="en">
+<html lang="{{.Lang}}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,11 +10,12 @@
   </head>
   <body>
     <main>
-      <p class="eyebrow">Version {{.Version}}</p>
+      <nav class="language-switch" aria-label="{{t .Lang "common.language"}}"><a href="?lang=en">{{t .Lang "common.english"}}</a><a href="?lang=it">{{t .Lang "common.italian"}}</a></nav>
+      <p class="eyebrow">{{t .Lang "common.version"}} {{.Version}}</p>
       <h1>Turnino</h1>
-      <p class="lead">Your turn, made simple.</p>
-      <p>Call the next number. Keep every counter, display, and waiting room in sync.</p>
-      <p><a href="/admin">Administration</a></p>
+      <p class="lead">{{t .Lang "home.tagline"}}</p>
+      <p>{{t .Lang "home.description"}}</p>
+      <p><a href="/admin">{{t .Lang "common.administration"}}</a></p>
     </main>
   </body>
 </html>

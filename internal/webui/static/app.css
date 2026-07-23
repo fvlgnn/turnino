@@ -18,6 +18,16 @@ main {
 
 a { color: #087f5b; }
 
+.language-switch {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.topbar .language-switch { margin: 0; }
+
 h1 {
   margin: 0;
   color: #087f5b;

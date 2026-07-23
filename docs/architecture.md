@@ -35,6 +35,12 @@ Number allocation and call creation must occur in one database transaction. A co
 - Structured logs to standard output.
 - Configuration through environment variables and command-line flags.
 
+## Localization
+
+English and Italian messages live in flat, embedded JSON dictionaries under `internal/webui/translations`. Templates resolve messages with `{{t .Lang "message.key"}}`. Missing messages fall back to English; a key missing from every dictionary is rendered literally so it is visible during development.
+
+The selected language is resolved in this order: the `turnino_lang` cookie set by `?lang=en` or `?lang=it`, the browser's `Accept-Language` header, then English. The language cookie contains no identity or session information.
+
 ## Deployment
 
 The same binary should run natively and in a container. Releases target Linux AMD64 and ARM64 first, with convenience builds for macOS and Windows. Persistent state lives under `/data` in the container.

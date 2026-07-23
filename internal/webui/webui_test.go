@@ -34,6 +34,69 @@ func TestHomePage(t *testing.T) {
 	}
 }
 
+func TestItalianFromAcceptLanguage(t *testing.T) {
+	handler, _ := testHandler(t)
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	request.Header.Set("Accept-Language", "it-IT,it;q=0.9,en;q=0.8")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	body := response.Body.String()
+	for _, expected := range []string{`<html lang="it">`, "Il tuo turno, senza complicazioni.", "Amministrazione"} {
+		if !strings.Contains(body, expected) {
+			t.Errorf("Italian response does not contain %q", expected)
+		}
+	}
+}
+
+func TestLanguageSelectionPersistsCookie(t *testing.T) {
+	handler, _ := testHandler(t)
+	selection := httptest.NewRequest(http.MethodGet, "/admin?lang=it", nil)
+	selectionResponse := httptest.NewRecorder()
+	handler.ServeHTTP(selectionResponse, selection)
+	if selectionResponse.Code != http.StatusSeeOther || selectionResponse.Header().Get("Location") != "/admin" {
+		t.Fatalf("language selection = %d %q, want 303 /admin", selectionResponse.Code, selectionResponse.Header().Get("Location"))
+	}
+	cookies := selectionResponse.Result().Cookies()
+	if len(cookies) != 1 || cookies[0].Name != "turnino_lang" || cookies[0].Value != "it" {
+		t.Fatalf("language cookies = %#v", cookies)
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/admin", nil)
+	request.AddCookie(cookies[0])
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if !strings.Contains(response.Body.String(), "non è configurata") {
+		t.Fatal("language cookie did not select Italian")
+	}
+}
+
+func TestTranslationsFallbackToEnglish(t *testing.T) {
+	messages, err := loadCatalog()
+	if err != nil {
+		t.Fatalf("loadCatalog() error = %v", err)
+	}
+	delete(messages["it"], "home.tagline")
+	if got := messages.text("it", "home.tagline"); got != "Your turn, made simple." {
+		t.Fatalf("fallback translation = %q", got)
+	}
+	if got := messages.text("it", "missing.key"); got != "missing.key" {
+		t.Fatalf("missing translation = %q", got)
+	}
+}
+
+func TestDictionariesContainTheSameKeys(t *testing.T) {
+	messages, err := loadCatalog()
+	if err != nil {
+		t.Fatalf("loadCatalog() error = %v", err)
+	}
+	for key := range messages["en"] {
+		if messages["it"][key] == "" {
+			t.Errorf("Italian dictionary is missing %q", key)
+		}
+	}
+}
+
 func TestAdminLoginCreateQueueAndCSRF(t *testing.T) {
 	handler, store := testHandler(t)
 	const adminToken = "test-administrator-token-32-chars"
