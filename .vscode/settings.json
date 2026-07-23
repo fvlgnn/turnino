@@ -1,6 +1,0 @@
-{
-  "editor.formatOnSave": true,
-  "go.testFlags": ["-race"],
-  "go.toolsManagement.autoUpdate": true
-}
-
