@@ -16,7 +16,9 @@ main {
   width: min(42rem, calc(100% - 3rem));
 }
 
-a { color: #087f5b; }
+a {
+  color: #087f5b;
+}
 
 .language-switch {
   display: flex;
@@ -26,7 +28,9 @@ a { color: #087f5b; }
   font-weight: 700;
 }
 
-.topbar .language-switch { margin: 0; }
+.topbar .language-switch {
+  margin: 0;
+}
 
 h1 {
   margin: 0;
@@ -51,20 +55,45 @@ h1 {
 }
 
 .topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem max(1.5rem, calc((100% - 76rem) / 2));
   border-bottom: 1px solid #cfddd5;
   background: #fff;
+  width: 100%;
+}
+
+.topbar-inner {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+}
+
+.topbar-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.5rem;
+  white-space: nowrap;
+}
+
+.topbar-actions form {
+  margin: 0;
 }
 
 .brand {
+  min-width: 0;
+  overflow: hidden;
   color: #087f5b;
   font-size: 1.4rem;
   font-weight: 800;
   letter-spacing: -0.04em;
   text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-main {
@@ -101,7 +130,8 @@ h1 {
   box-shadow: 0 0.5rem 2rem rgb(21 33 27 / 7%);
 }
 
-.stack, .form-grid {
+.stack,
+.form-grid {
   display: grid;
   gap: 1rem;
 }
@@ -122,7 +152,8 @@ label {
   font-weight: 700;
 }
 
-input, select {
+input,
+select {
   min-width: 0;
   padding: 0.7rem 0.8rem;
   border: 1px solid #aebfb5;
@@ -154,8 +185,14 @@ button {
   cursor: pointer;
 }
 
-button.secondary { background: #e4eee8; color: #15211b; }
-button.danger { background: #b42318; }
+button.secondary {
+  background: #e4eee8;
+  color: #15211b;
+}
+
+button.danger {
+  background: #b42318;
+}
 
 .alert {
   padding: 1rem;
@@ -163,25 +200,110 @@ button.danger { background: #b42318; }
   background: #e4eee8;
 }
 
-.alert.error { background: #fee4e2; color: #7a271a; }
-.alert.secret { display: grid; gap: 0.4rem; margin-bottom: 1.5rem; }
-.alert.secret code { overflow-wrap: anywhere; font-size: 1rem; }
-.muted { color: #607268; }
+.alert.error {
+  background: #fee4e2;
+  color: #7a271a;
+}
 
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 0.7rem 0.5rem; border-bottom: 1px solid #e0e8e3; text-align: left; vertical-align: top; }
-th { color: #607268; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
-.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.actions button { padding: 0.45rem 0.65rem; font-size: 0.8rem; }
+.alert.secret {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.alert.secret code {
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+
+.muted {
+  color: #607268;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.7rem 0.5rem;
+  border-bottom: 1px solid #e0e8e3;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: #607268;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.actions button {
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 40rem) {
+  .topbar-inner {
+    gap: 0.75rem;
+    padding-inline: 1rem;
+  }
+
+  .topbar-actions {
+    gap: 0.75rem;
+  }
+}
 
 @media (prefers-color-scheme: dark) {
-  :root { color: #e7f0eb; background: #101713; }
-  .topbar, .panel { border-color: #33463b; background: #18221c; }
-  .page-title { color: #e7f0eb; }
-  input, select { border-color: #52685b; background: #101713; }
-  button.secondary { background: #30463a; color: #fff; }
-  th, td { border-color: #33463b; }
-  .alert { background: #263d31; }
-  .alert.error { background: #4a1d1a; color: #ffd4cf; }
+  :root {
+    color: #e7f0eb;
+    background: #101713;
+  }
+
+  .topbar,
+  .panel {
+    border-color: #33463b;
+    background: #18221c;
+  }
+
+  .page-title {
+    color: #e7f0eb;
+  }
+
+  input,
+  select {
+    border-color: #52685b;
+    background: #101713;
+  }
+
+  button.secondary {
+    background: #30463a;
+    color: #fff;
+  }
+
+  th,
+  td {
+    border-color: #33463b;
+  }
+
+  .alert {
+    background: #263d31;
+  }
+
+  .alert.error {
+    background: #4a1d1a;
+    color: #ffd4cf;
+  }
 }
