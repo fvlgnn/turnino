@@ -5,8 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"html/template"
-	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -14,6 +12,8 @@ import (
 	"path/filepath"
 	"syscall"
 	"time"
+
+	"github.com/fvlgnn/turnino/internal/webui"
 )
 
 var (
@@ -21,10 +21,6 @@ var (
 	commit  = "none"
 	date    = "unknown"
 )
-
-type pageData struct {
-	Version string
-}
 
 func main() {
 	if err := run(); err != nil {
@@ -48,31 +44,18 @@ func run() error {
 		return fmt.Errorf("create data directory: %w", err)
 	}
 
-	tmpl, err := template.ParseFS(webFiles, "web/templates/*.html")
+	ui, err := webui.New(version)
 	if err != nil {
-		return fmt.Errorf("parse templates: %w", err)
-	}
-	staticFiles, err := fs.Sub(webFiles, "web/static")
-	if err != nil {
-		return fmt.Errorf("open static assets: %w", err)
+		return fmt.Errorf("initialize web UI: %w", err)
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticFiles)))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok\n"))
 	})
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		if err := tmpl.ExecuteTemplate(w, "index.html", pageData{Version: version}); err != nil {
-			slog.Error("render home page", "error", err)
-		}
-	})
+	mux.Handle("/", ui)
 
 	server := &http.Server{
 		Addr:              *addr,

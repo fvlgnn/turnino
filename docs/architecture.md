@@ -30,6 +30,7 @@ Number allocation and call creation must occur in one database transaction. A co
 - SQLite with WAL mode and foreign keys enabled.
 - A pure-Go SQLite driver is preferred so cross-compiled binaries remain straightforward.
 - `html/template`, embedded templates and static assets.
+- Embedded JSON translation dictionaries, initially `en` and `it`, with English as the fallback language.
 - Vanilla JavaScript and modern CSS; no SPA toolchain initially.
 - Structured logs to standard output.
 - Configuration through environment variables and command-line flags.

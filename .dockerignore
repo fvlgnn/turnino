@@ -1,6 +1,7 @@
 .git
 .github
 .archivio
+.maintainer
 .idea
 .vscode
 bin

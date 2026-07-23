@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+In working! Improvements and fix.
+
+## [0.1.0] - 2026-07-24
+
 ### Added
 
 - Initial Go HTTP server with embedded HTML and static assets.
@@ -15,7 +19,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Initial architecture, roadmap and development documentation.
 - GNU Affero General Public License v3.0.
 
-<!-- Before tagging vX.Y.Z, rename Unreleased to:
-## [X.Y.Z] - YYYY-MM-DD
-and add a new empty Unreleased section above it. -->
+[Unreleased]: https://github.com/fvlgnn/turnino/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/fvlgnn/turnino/releases/tag/v0.1.0
 

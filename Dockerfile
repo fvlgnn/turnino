@@ -8,6 +8,7 @@ ARG BUILD_DATE=unknown
 WORKDIR /src
 COPY go.mod ./
 COPY cmd ./cmd
+COPY internal ./internal
 
 RUN CGO_ENABLED=0 go test ./... && \
     CGO_ENABLED=0 go build \

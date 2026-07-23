@@ -2,9 +2,8 @@
 /bin/
 /dist/
 
-# Private project material and personal notes
+# Private project material
 /.archivio/
-/NOTE.md
 *.exe
 *.out
 *.test
