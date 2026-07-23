@@ -126,6 +126,53 @@ func (s *Store) ResetAdmin(ctx context.Context, tokenHash []byte) error {
 	return nil
 }
 
+func (s *Store) GetSettings(ctx context.Context) (domain.Settings, error) {
+	var settings domain.Settings
+	err := s.db.QueryRowContext(ctx, `
+		SELECT installation_name, default_language, recent_calls_limit,
+		       sound_enabled, highlight_duration_seconds
+		FROM settings WHERE id = 1`,
+	).Scan(
+		&settings.InstallationName,
+		&settings.DefaultLanguage,
+		&settings.RecentCallsLimit,
+		&settings.SoundEnabled,
+		&settings.HighlightDurationSeconds,
+	)
+	if err != nil {
+		return domain.Settings{}, fmt.Errorf("get settings: %w", err)
+	}
+	return settings, nil
+}
+
+func (s *Store) UpdateSettings(ctx context.Context, settings domain.Settings) (domain.Settings, error) {
+	if err := settings.NormalizeAndValidate(); err != nil {
+		return domain.Settings{}, err
+	}
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE settings
+		SET installation_name = ?, default_language = ?, recent_calls_limit = ?,
+		    sound_enabled = ?, highlight_duration_seconds = ?
+		WHERE id = 1`,
+		settings.InstallationName,
+		settings.DefaultLanguage,
+		settings.RecentCallsLimit,
+		settings.SoundEnabled,
+		settings.HighlightDurationSeconds,
+	)
+	if err != nil {
+		return domain.Settings{}, fmt.Errorf("update settings: %w", err)
+	}
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return domain.Settings{}, fmt.Errorf("read updated settings count: %w", err)
+	}
+	if updated != 1 {
+		return domain.Settings{}, errors.New("settings row is missing")
+	}
+	return settings, nil
+}
+
 func (s *Store) CreateQueue(ctx context.Context, params domain.CreateQueueParams) (domain.Queue, error) {
 	if err := params.NormalizeAndValidate(); err != nil {
 		return domain.Queue{}, err

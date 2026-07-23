@@ -56,6 +56,42 @@ type CallRecord struct {
 	CounterName string
 }
 
+type Settings struct {
+	InstallationName         string
+	DefaultLanguage          string
+	RecentCallsLimit         int
+	SoundEnabled             bool
+	HighlightDurationSeconds int
+}
+
+func DefaultSettings() Settings {
+	return Settings{
+		InstallationName:         "Turnino",
+		DefaultLanguage:          "en",
+		RecentCallsLimit:         10,
+		SoundEnabled:             true,
+		HighlightDurationSeconds: 5,
+	}
+}
+
+func (s *Settings) NormalizeAndValidate() error {
+	s.InstallationName = strings.TrimSpace(s.InstallationName)
+	s.DefaultLanguage = strings.ToLower(strings.TrimSpace(s.DefaultLanguage))
+	if s.InstallationName == "" || len(s.InstallationName) > 100 {
+		return errors.New("installation name must contain between 1 and 100 characters")
+	}
+	if s.DefaultLanguage != "en" && s.DefaultLanguage != "it" {
+		return errors.New("default language must be en or it")
+	}
+	if s.RecentCallsLimit < 1 || s.RecentCallsLimit > 100 {
+		return errors.New("recent calls limit must be between 1 and 100")
+	}
+	if s.HighlightDurationSeconds < 1 || s.HighlightDurationSeconds > 30 {
+		return errors.New("highlight duration must be between 1 and 30 seconds")
+	}
+	return nil
+}
+
 type CreateQueueParams struct {
 	Name     string
 	Prefix   string

@@ -14,7 +14,7 @@
 - [x] Scegliere e documentare il driver SQLite pure Go.
 - [x] Creare schema e migrazioni automatiche.
 - [x] Implementare `Queue`, `Counter` e `Call`.
-- [ ] Implementare `Settings`.
+- [x] Implementare `Settings`.
 - [x] Rendere atomica l'allocazione del prossimo numero.
 - [x] Implementare registrazione sportello con token revocabile.
 - [x] Implementare la chiamata automatica nel dominio, nella persistenza e nell'API HTTP.
@@ -23,6 +23,7 @@
 - [ ] Implementare la richiamata dell'ultimo numero senza avanzare la coda.
 - [ ] Creare l'interfaccia Sportello per l'operatore e il relativo display pubblico.
 - [ ] Creare il monitor pubblico a tutto schermo con lista delle chiamate recenti, segnale acustico ed evidenziazione visiva delle nuove chiamate.
+- [ ] Aggiusta header pagina admin (classe topbar tutto sezioni attaccate)
 - [ ] Implementare aggiornamenti SSE con riconnessione e fallback polling.
 - [x] Implementare amministrazione essenziale.
 - [x] Aggiungere localizzazione italiana e inglese.
@@ -40,3 +41,8 @@
 - [ ] Definire politica di versionamento e compatibilità delle migrazioni.
 - [x] Preparare dati dimostrativi interamente sintetici.
 - [ ] Preparare screenshot usando esclusivamente i dati dimostrativi sintetici.
+
+## Fasi successive
+
+- [ ] Setting per temi, logo, banner, volume dettagliato e altre personalizzazioni.
+

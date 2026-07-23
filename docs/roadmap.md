@@ -12,7 +12,7 @@
 
 - [x] SQLite schema and automatic migrations
 - [x] Queue domain and configurable numbering policies
-- [ ] Installation-wide settings for display and localization preferences
+- [x] Installation-wide settings for display and localization preferences
 - [x] Atomic next-number allocation and call recording
 - [x] Counter registration with revocable and rotatable browser tokens
 - [x] Automatic next-number call in the domain, persistence layer and HTTP API
@@ -38,6 +38,7 @@
 
 ## Future phases, only with validated demand
 
+- Setting (themes, logo, banner, volumes, etc.)
 - Ticket issuing and QR codes
 - Priority and transfer workflows
 - Multiple services per counter

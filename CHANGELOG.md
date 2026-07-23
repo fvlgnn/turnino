@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Explicit offline administrator reset command and SQLite/WSL troubleshooting guidance.
 - Embedded English and Italian JSON dictionaries, template translation helpers and browser language persistence.
 - Consistent SQLite backup, call-history CSV export and reproducible synthetic demonstration database commands.
+- Typed installation settings with an administration form, persisted defaults and validation.
 
 ## [0.1.0] - 2026-07-24
 

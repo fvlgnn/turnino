@@ -27,6 +27,8 @@ var files embed.FS
 type Store interface {
 	AdminConfigured(context.Context) (bool, error)
 	ValidateAdminToken(context.Context, []byte) (bool, error)
+	GetSettings(context.Context) (domain.Settings, error)
+	UpdateSettings(context.Context, domain.Settings) (domain.Settings, error)
 	ListQueues(context.Context) ([]domain.Queue, error)
 	CreateQueue(context.Context, domain.CreateQueueParams) (domain.Queue, error)
 	ListCounters(context.Context) ([]domain.Counter, error)
@@ -62,6 +64,7 @@ type pageData struct {
 	Error           string
 	Queues          []domain.Queue
 	Counters        []domain.Counter
+	Settings        domain.Settings
 	NewCounterToken string
 }
 
@@ -94,6 +97,7 @@ func New(version string, store Store) (http.Handler, error) {
 	mux.HandleFunc("GET /admin", application.admin)
 	mux.HandleFunc("POST /admin/login", application.login)
 	mux.HandleFunc("POST /admin/logout", application.logout)
+	mux.HandleFunc("POST /admin/settings", application.updateSettings)
 	mux.HandleFunc("POST /admin/queues", application.createQueue)
 	mux.HandleFunc("POST /admin/counters", application.createCounter)
 	mux.HandleFunc("POST /admin/counters/{counterID}/revoke", application.revokeCounter)
@@ -173,6 +177,31 @@ func (a *app) logout(w http.ResponseWriter, r *http.Request) {
 		a.sessions.delete(cookie.Value)
 	}
 	http.SetCookie(w, &http.Cookie{Name: "turnino_admin", Path: "/admin", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteStrictMode})
+	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+}
+
+func (a *app) updateSettings(w http.ResponseWriter, r *http.Request) {
+	_, ok := a.authorizeForm(w, r)
+	if !ok {
+		return
+	}
+	recentCallsLimit, recentCallsErr := strconv.Atoi(r.PostFormValue("recent_calls_limit"))
+	highlightDuration, highlightDurationErr := strconv.Atoi(r.PostFormValue("highlight_duration_seconds"))
+	if recentCallsErr != nil || highlightDurationErr != nil {
+		a.redirectAdminError(w, r, a.message(r, "settings.invalid_numbers"))
+		return
+	}
+	_, err := a.store.UpdateSettings(r.Context(), domain.Settings{
+		InstallationName:         r.PostFormValue("installation_name"),
+		DefaultLanguage:          r.PostFormValue("default_language"),
+		RecentCallsLimit:         recentCallsLimit,
+		SoundEnabled:             r.PostFormValue("sound_enabled") == "on",
+		HighlightDurationSeconds: highlightDuration,
+	})
+	if err != nil {
+		a.redirectAdminError(w, r, err.Error())
+		return
+	}
 	http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }
 
@@ -322,14 +351,26 @@ func (a *app) languageSelection(next http.Handler) http.Handler {
 }
 
 func (a *app) page(r *http.Request) pageData {
-	return pageData{Version: a.version, Lang: a.language(r)}
+	settings := domain.DefaultSettings()
+	stored, err := a.store.GetSettings(r.Context())
+	if err != nil {
+		slog.Error("load settings", "error", err)
+	} else {
+		settings = stored
+	}
+	return pageData{
+		Version:  a.version,
+		Lang:     a.language(r, settings.DefaultLanguage),
+		Settings: settings,
+	}
 }
 
 func (a *app) message(r *http.Request, key string) string {
-	return a.catalog.text(a.language(r), key)
+	data := a.page(r)
+	return a.catalog.text(data.Lang, key)
 }
 
-func (a *app) language(r *http.Request) string {
+func (a *app) language(r *http.Request, fallback string) string {
 	if cookie, err := r.Cookie("turnino_lang"); err == nil {
 		if cookie.Value == "en" || cookie.Value == "it" {
 			return cookie.Value
@@ -347,7 +388,7 @@ func (a *app) language(r *http.Request) string {
 			return "en"
 		}
 	}
-	return defaultLanguage
+	return normalizeLanguage(fallback)
 }
 
 func (a *app) authorizeForm(w http.ResponseWriter, r *http.Request) (session, bool) {

@@ -34,8 +34,65 @@ func TestOpenAppliesMigrationsOnce(t *testing.T) {
 	if err := store.db.QueryRowContext(ctx, "SELECT count(*) FROM schema_migrations").Scan(&migrations); err != nil {
 		t.Fatalf("count migrations: %v", err)
 	}
-	if migrations != 2 {
-		t.Fatalf("migration count = %d, want 2", migrations)
+	if migrations != 3 {
+		t.Fatalf("migration count = %d, want 3", migrations)
+	}
+}
+
+func TestSettingsDefaultsAndUpdate(t *testing.T) {
+	ctx := context.Background()
+	store, err := Open(ctx, filepath.Join(t.TempDir(), "turnino.db"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer store.Close()
+
+	settings, err := store.GetSettings(ctx)
+	if err != nil {
+		t.Fatalf("GetSettings() error = %v", err)
+	}
+	if settings != domain.DefaultSettings() {
+		t.Fatalf("default settings = %#v, want %#v", settings, domain.DefaultSettings())
+	}
+
+	want := domain.Settings{
+		InstallationName:         "  Municipal Hall  ",
+		DefaultLanguage:          "IT",
+		RecentCallsLimit:         15,
+		SoundEnabled:             false,
+		HighlightDurationSeconds: 8,
+	}
+	updated, err := store.UpdateSettings(ctx, want)
+	if err != nil {
+		t.Fatalf("UpdateSettings() error = %v", err)
+	}
+	if updated.InstallationName != "Municipal Hall" || updated.DefaultLanguage != "it" {
+		t.Fatalf("normalized settings = %#v", updated)
+	}
+	got, err := store.GetSettings(ctx)
+	if err != nil {
+		t.Fatalf("GetSettings() after update error = %v", err)
+	}
+	if got != updated {
+		t.Fatalf("stored settings = %#v, want %#v", got, updated)
+	}
+}
+
+func TestUpdateSettingsRejectsInvalidValues(t *testing.T) {
+	ctx := context.Background()
+	store, err := Open(ctx, filepath.Join(t.TempDir(), "turnino.db"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer store.Close()
+
+	invalid := domain.DefaultSettings()
+	invalid.RecentCallsLimit = 101
+	if _, err := store.UpdateSettings(ctx, invalid); err == nil {
+		t.Fatal("UpdateSettings() error = nil, want validation error")
+	}
+	if got, err := store.GetSettings(ctx); err != nil || got != domain.DefaultSettings() {
+		t.Fatalf("settings after rejected update = %#v, %v", got, err)
 	}
 }
 

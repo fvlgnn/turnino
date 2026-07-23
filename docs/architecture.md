@@ -20,7 +20,7 @@ Server-rendered HTML provides the initial state. SSE carries one-way live update
 - **Queue** owns a numbering policy and its current sequence.
 - **Counter** identifies a service desk or operator terminal.
 - **Call** records a number shown at a counter and whether it was automatic, manual, or recalled.
-- **Settings** stores installation-wide display and localization preferences.
+- **Settings** is a singleton containing the installation name, default language and the small set of public-monitor preferences shared by every browser.
 
 Number allocation and call creation must occur in one database transaction. A counter's online presence is ephemeral, while its identity and call history are persistent.
 
@@ -39,7 +39,7 @@ Number allocation and call creation must occur in one database transaction. A co
 
 English and Italian messages live in flat, embedded JSON dictionaries under `internal/webui/translations`. Templates resolve messages with `{{t .Lang "message.key"}}`. Missing messages fall back to English; a key missing from every dictionary is rendered literally so it is visible during development.
 
-The selected language is resolved in this order: the `turnino_lang` cookie set by `?lang=en` or `?lang=it`, the browser's `Accept-Language` header, then English. The language cookie contains no identity or session information.
+The selected language is resolved in this order: the `turnino_lang` cookie set by `?lang=en` or `?lang=it`, the browser's `Accept-Language` header, then the installation default stored in SQLite. English remains the dictionary fallback when a translation is missing. The language cookie contains no identity or session information.
 
 ## Deployment
 
@@ -50,6 +50,8 @@ The same binary should run natively and in a container. Releases target Linux AM
 The application opens `<data-dir>/turnino.db` during startup and applies embedded, ordered SQL migrations before accepting HTTP traffic. Schema changes are recorded in `schema_migrations`; there is no separate migration command or ORM.
 
 Advancing a queue and recording its call happen in one SQLite transaction. If the queue does not exist or the selected counter is unavailable, the number change is rolled back.
+
+Installation settings use one typed row rather than an unrestricted key-value table. Database constraints and domain validation keep their values within the limits supported by the UI.
 
 ## Authentication
 

@@ -49,6 +49,29 @@ func TestItalianFromAcceptLanguage(t *testing.T) {
 	}
 }
 
+func TestInstallationDefaultLanguageAndName(t *testing.T) {
+	handler, store := testHandler(t)
+	settings, err := store.GetSettings(context.Background())
+	if err != nil {
+		t.Fatalf("GetSettings() error = %v", err)
+	}
+	settings.InstallationName = "Comune di Esempio"
+	settings.DefaultLanguage = "it"
+	if _, err := store.UpdateSettings(context.Background(), settings); err != nil {
+		t.Fatalf("UpdateSettings() error = %v", err)
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	body := response.Body.String()
+	for _, expected := range []string{`<html lang="it">`, "Comune di Esempio", "Il tuo turno, senza complicazioni."} {
+		if !strings.Contains(body, expected) {
+			t.Errorf("response does not contain %q", expected)
+		}
+	}
+}
+
 func TestLanguageSelectionPersistsCookie(t *testing.T) {
 	handler, _ := testHandler(t)
 	selection := httptest.NewRequest(http.MethodGet, "/admin?lang=it", nil)
@@ -144,6 +167,26 @@ func TestAdminLoginCreateQueueAndCSRF(t *testing.T) {
 	queues, err := store.ListQueues(context.Background())
 	if err != nil || len(queues) != 1 || queues[0].Name != "General" {
 		t.Fatalf("ListQueues() = %#v, %v", queues, err)
+	}
+
+	updateSettings := formRequest(http.MethodPost, "/admin/settings", url.Values{
+		"csrf_token": {csrfMatch[1]}, "installation_name": {"Municipal Hall"},
+		"default_language": {"it"}, "recent_calls_limit": {"12"},
+		"highlight_duration_seconds": {"7"},
+	}, cookies[0])
+	updateSettingsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(updateSettingsResponse, updateSettings)
+	if updateSettingsResponse.Code != http.StatusSeeOther {
+		t.Fatalf("update settings status = %d, want %d", updateSettingsResponse.Code, http.StatusSeeOther)
+	}
+	settings, err := store.GetSettings(context.Background())
+	if err != nil {
+		t.Fatalf("GetSettings() error = %v", err)
+	}
+	if settings.InstallationName != "Municipal Hall" || settings.DefaultLanguage != "it" ||
+		settings.RecentCallsLimit != 12 || settings.SoundEnabled ||
+		settings.HighlightDurationSeconds != 7 {
+		t.Fatalf("settings after form update = %#v", settings)
 	}
 }
 

@@ -5,14 +5,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <title>Turnino</title>
+    <title>{{.Settings.InstallationName}} · Turnino</title>
     <link rel="stylesheet" href="/static/app.css">
   </head>
   <body>
     <main>
       <nav class="language-switch" aria-label="{{t .Lang "common.language"}}"><a href="?lang=en">{{t .Lang "common.english"}}</a><a href="?lang=it">{{t .Lang "common.italian"}}</a></nav>
       <p class="eyebrow">{{t .Lang "common.version"}} {{.Version}}</p>
-      <h1>Turnino</h1>
+      <h1>{{.Settings.InstallationName}}</h1>
       <p class="lead">{{t .Lang "home.tagline"}}</p>
       <p>{{t .Lang "home.description"}}</p>
       <p><a href="/admin">{{t .Lang "common.administration"}}</a></p>

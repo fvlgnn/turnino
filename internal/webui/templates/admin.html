@@ -5,12 +5,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <title>{{t .Lang "common.administration"}} · Turnino</title>
+    <title>{{t .Lang "common.administration"}} · {{.Settings.InstallationName}}</title>
     <link rel="stylesheet" href="/static/app.css">
   </head>
   <body class="admin-body">
     <header class="topbar">
-      <a class="brand" href="/">Turnino</a>
+      <a class="brand" href="/">{{.Settings.InstallationName}}</a>
       <nav class="language-switch" aria-label="{{t .Lang "common.language"}}"><a href="?lang=en">{{t .Lang "common.english"}}</a><a href="?lang=it">{{t .Lang "common.italian"}}</a></nav>
       <form method="post" action="/admin/logout">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
@@ -30,6 +30,24 @@
         <span>{{t .Lang "admin.secret_help"}}</span>
       </section>
       {{end}}
+
+      <section class="panel settings-panel">
+        <h2>{{t .Lang "settings.title"}}</h2>
+        <form method="post" action="/admin/settings" class="form-grid">
+          <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+          <label>{{t .Lang "settings.installation_name"}}<input name="installation_name" value="{{.Settings.InstallationName}}" required maxlength="100"></label>
+          <label>{{t .Lang "settings.default_language"}}
+            <select name="default_language" required>
+              <option value="en"{{if eq .Settings.DefaultLanguage "en"}} selected{{end}}>{{t .Lang "common.english"}}</option>
+              <option value="it"{{if eq .Settings.DefaultLanguage "it"}} selected{{end}}>{{t .Lang "common.italian"}}</option>
+            </select>
+          </label>
+          <label>{{t .Lang "settings.recent_calls"}}<input name="recent_calls_limit" type="number" value="{{.Settings.RecentCallsLimit}}" min="1" max="100" required></label>
+          <label>{{t .Lang "settings.highlight_duration"}}<input name="highlight_duration_seconds" type="number" value="{{.Settings.HighlightDurationSeconds}}" min="1" max="30" required></label>
+          <label class="checkbox"><input name="sound_enabled" type="checkbox"{{if .Settings.SoundEnabled}} checked{{end}}> {{t .Lang "settings.sound_enabled"}}</label>
+          <button type="submit">{{t .Lang "settings.save"}}</button>
+        </form>
+      </section>
 
       <section class="admin-grid">
         <article class="panel">
