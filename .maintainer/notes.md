@@ -39,7 +39,7 @@ Il file `api/turnino.rest` è compatibile con l'estensione VS Code `humao.rest-c
 
 REST Client recupera automaticamente dalle prime due risposte l'ID della coda e il token dello sportello. Il token viene mostrato in chiaro soltanto durante la registrazione; nel database ne viene conservato l'hash SHA-256.
 
-Gli endpoint sotto `/api/v1/admin` richiedono il token amministrativo. L'endpoint `calls/next` richiede invece il token dello sportello restituito al momento della registrazione. Gli esempi successivi mostrano anche rotazione e revoca; eseguire la revoca per ultima.
+Gli endpoint sotto `/api/v1/admin` richiedono il token amministrativo. L'endpoint `calls/next` richiede invece il token dello sportello restituito al momento della registrazione. Gli esempi successivi mostrano anche rotazione, revoca e riattivazione; una riattivazione genera sempre un nuovo token.
 
 In alternativa, impostare manualmente `queueId` e `counterToken` nell'ultima sezione del file `.rest`. Non inserire credenziali direttamente nel file versionato.
 
@@ -51,6 +51,197 @@ make build
 make docker-build
 docker build -t turnino:dev .
 docker run --rm turnino:dev -version
+```
+
+## Recupero amministratore offline
+
+Fermare completamente Turnino, quindi eseguire:
+
+```sh
+make build
+./bin/turnino admin reset --data-dir ./data --confirm
+```
+
+Con Compose:
+
+```sh
+docker compose stop turnino
+docker compose run --rm turnino admin reset --data-dir /data --confirm
+docker compose start turnino
+```
+
+Il comando sostituisce la credenziale amministrativa e stampa il nuovo token una sola volta. Conservarlo e aggiornare il `.env` locale. Non eseguire il reset mentre Turnino è attivo.
+
+## Ispezionare SQLite da Windows/WSL
+
+Non aprire il database originale da HeidiSQL tramite `\\wsl.localhost\...`: WAL e locking attraversano due ambienti diversi. Fermare Turnino, verificare che non esistano processi o file `turnino.db-wal`/`turnino.db-shm`, quindi copiare `turnino.db` sotto `/mnt/c/...` e aprire la copia dal percorso Windows. Non copiare mai la copia sopra il database originale e non eliminare manualmente i file WAL. Vedere `docs/troubleshooting.md`.
+
+## Comandi SQLite utili
+
+Per ispezionare il database reale senza modificarlo:
+
+```sh
+sqlite3 -readonly data/turnino.db
+```
+
+Se il database è sicuramente fermo, non esistono file `-wal`/`-shm` e l'apertura read-only non riesce perché SQLite tenta comunque di creare file ausiliari, usare la modalità immutabile:
+
+```sh
+sqlite3 'file:data/turnino.db?mode=ro&immutable=1'
+```
+
+Non usare `immutable=1` mentre Turnino è attivo: ignora locking e WAL e potrebbe mostrare dati incompleti o incoerenti.
+
+Per lavorare in scrittura, fermare prima Turnino e creare una copia di sicurezza:
+
+```sh
+cp data/turnino.db /tmp/turnino-before-edit.db
+sqlite3 data/turnino.db
+```
+
+I comandi che iniziano con `.` appartengono alla shell SQLite e non richiedono il punto e virgola:
+
+```text
+.help
+.databases
+.tables
+.schema
+.schema queues
+.indexes
+.headers on
+.mode column
+.timeout 5000
+.timer on
+.quit
+```
+
+Controlli sul database:
+
+```sql
+PRAGMA journal_mode;
+PRAGMA foreign_keys;
+PRAGMA integrity_check;
+PRAGMA foreign_key_check;
+```
+
+Elenco delle migrazioni applicate:
+
+```sql
+SELECT version,
+       datetime(applied_at, 'unixepoch', 'localtime') AS applied_at
+FROM schema_migrations
+ORDER BY version;
+```
+
+Code e stato della numerazione:
+
+```sql
+SELECT id, name, prefix, digits,
+       min_value, max_value, current_value,
+       datetime(created_at, 'unixepoch', 'localtime') AS created_at
+FROM queues
+ORDER BY name;
+```
+
+Sportelli, senza mostrare l'hash completo del token:
+
+```sql
+SELECT id, name, enabled,
+       length(token_hash) AS token_hash_bytes,
+       datetime(created_at, 'unixepoch', 'localtime') AS created_at
+FROM counters
+ORDER BY name;
+```
+
+Ultime chiamate con coda e sportello:
+
+```sql
+SELECT calls.id,
+       calls.number,
+       calls.kind,
+       queues.name AS queue,
+       counters.name AS counter,
+       datetime(calls.called_at, 'unixepoch', 'localtime') AS called_at
+FROM calls
+JOIN queues ON queues.id = calls.queue_id
+JOIN counters ON counters.id = calls.counter_id
+ORDER BY calls.id DESC
+LIMIT 20;
+```
+
+Conteggio delle chiamate per coda:
+
+```sql
+SELECT queues.name, COUNT(calls.id) AS calls
+FROM queues
+LEFT JOIN calls ON calls.queue_id = queues.id
+GROUP BY queues.id, queues.name
+ORDER BY queues.name;
+```
+
+Usare sempre una transazione per modifiche manuali. `BEGIN IMMEDIATE` fallisce subito o attende secondo il timeout se un altro processo sta scrivendo:
+
+```sql
+BEGIN IMMEDIATE;
+
+UPDATE queues
+SET name = 'General services'
+WHERE id = 1;
+
+SELECT id, name FROM queues WHERE id = 1;
+
+COMMIT;
+-- Usare ROLLBACK; al posto di COMMIT; per annullare le modifiche.
+```
+
+Ripristinare manualmente la numerazione di una coda allo stato iniziale:
+
+```sql
+BEGIN IMMEDIATE;
+UPDATE queues
+SET current_value = min_value - 1
+WHERE id = 1;
+COMMIT;
+```
+
+Inserire una coda di prova rispettando i vincoli dello schema:
+
+```sql
+BEGIN IMMEDIATE;
+INSERT INTO queues (
+    name, prefix, digits, min_value, max_value, current_value
+) VALUES (
+    'Test queue', 'T', 3, 1, 999, 0
+);
+SELECT last_insert_rowid() AS queue_id;
+COMMIT;
+```
+
+Per il `current_value` iniziale usare sempre `min_value - 1`: nell'esempio `1 - 1 = 0`.
+
+Disabilitare manualmente uno sportello, solo per emergenza:
+
+```sql
+BEGIN IMMEDIATE;
+UPDATE counters SET enabled = 0 WHERE id = 1;
+COMMIT;
+```
+
+Per creare, ruotare, riattivare o revocare normalmente uno sportello usare l'interfaccia amministrativa o le API: inserimenti manuali in `counters` aggirerebbero la generazione sicura del token. Non inserire manualmente righe in `calls`, perché si perderebbe l'atomicità con l'avanzamento della coda. Per recuperare l'amministratore usare esclusivamente `turnino admin reset`.
+
+Creare un backup dalla shell SQLite:
+
+```text
+.backup /tmp/turnino-backup.db
+```
+
+Esportare il risultato di una query in CSV:
+
+```text
+.headers on
+.mode csv
+.once /tmp/turnino-calls.csv
+SELECT * FROM calls ORDER BY id;
 ```
 
 ## Configurazione locale

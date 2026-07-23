@@ -87,7 +87,7 @@ func run() error {
 		slog.Warn("administrator is not configured; set TURNINO_ADMIN_TOKEN and restart to enable administration APIs")
 	}
 
-	ui, err := webui.New(version)
+	ui, err := webui.New(version, db)
 	if err != nil {
 		return fmt.Errorf("initialize web UI: %w", err)
 	}

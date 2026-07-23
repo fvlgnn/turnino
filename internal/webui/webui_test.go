@@ -1,18 +1,21 @@
 package webui
 
 import (
+	"context"
+	"crypto/sha256"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
+
+	sqlitestore "github.com/fvlgnn/turnino/internal/store/sqlite"
 )
 
 func TestHomePage(t *testing.T) {
-	handler, err := New("test-version")
-	if err != nil {
-		t.Fatalf("New() error = %v", err)
-	}
-
+	handler, _ := testHandler(t)
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
@@ -20,30 +23,96 @@ func TestHomePage(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
 	}
-
-	body := response.Body.String()
 	for _, expected := range []string{
 		"Your turn, made simple.",
 		"Call the next number. Keep every counter, display, and waiting room in sync.",
 		"test-version",
 	} {
-		if !strings.Contains(body, expected) {
+		if !strings.Contains(response.Body.String(), expected) {
 			t.Errorf("response does not contain %q", expected)
 		}
 	}
 }
 
-func TestUnknownPageReturnsNotFound(t *testing.T) {
-	handler, err := New("test-version")
-	if err != nil {
-		t.Fatalf("New() error = %v", err)
+func TestAdminLoginCreateQueueAndCSRF(t *testing.T) {
+	handler, store := testHandler(t)
+	const adminToken = "test-administrator-token-32-chars"
+	tokenHash := sha256.Sum256([]byte(adminToken))
+	if _, err := store.BootstrapAdmin(context.Background(), tokenHash[:]); err != nil {
+		t.Fatalf("BootstrapAdmin() error = %v", err)
 	}
 
+	login := formRequest(http.MethodPost, "/admin/login", url.Values{"token": {adminToken}}, nil)
+	loginResponse := httptest.NewRecorder()
+	handler.ServeHTTP(loginResponse, login)
+	if loginResponse.Code != http.StatusSeeOther {
+		t.Fatalf("login status = %d, want %d", loginResponse.Code, http.StatusSeeOther)
+	}
+	cookies := loginResponse.Result().Cookies()
+	if len(cookies) != 1 || !cookies[0].HttpOnly || cookies[0].SameSite != http.SameSiteStrictMode {
+		t.Fatalf("login cookies = %#v, want one HttpOnly SameSite=Strict cookie", cookies)
+	}
+
+	dashboard := httptest.NewRequest(http.MethodGet, "/admin", nil)
+	dashboard.AddCookie(cookies[0])
+	dashboardResponse := httptest.NewRecorder()
+	handler.ServeHTTP(dashboardResponse, dashboard)
+	csrfMatch := regexp.MustCompile(`name="csrf_token" value="([^"]+)"`).FindStringSubmatch(dashboardResponse.Body.String())
+	if len(csrfMatch) != 2 {
+		t.Fatal("dashboard does not contain a CSRF token")
+	}
+
+	missingCSRF := formRequest(http.MethodPost, "/admin/queues", url.Values{}, cookies[0])
+	missingCSRFResponse := httptest.NewRecorder()
+	handler.ServeHTTP(missingCSRFResponse, missingCSRF)
+	if missingCSRFResponse.Code != http.StatusForbidden {
+		t.Fatalf("missing CSRF status = %d, want %d", missingCSRFResponse.Code, http.StatusForbidden)
+	}
+
+	create := formRequest(http.MethodPost, "/admin/queues", url.Values{
+		"csrf_token": {csrfMatch[1]}, "name": {"General"}, "prefix": {"A"},
+		"digits": {"3"}, "min_value": {"1"}, "max_value": {"999"},
+	}, cookies[0])
+	createResponse := httptest.NewRecorder()
+	handler.ServeHTTP(createResponse, create)
+	if createResponse.Code != http.StatusSeeOther {
+		t.Fatalf("create queue status = %d, want %d", createResponse.Code, http.StatusSeeOther)
+	}
+	queues, err := store.ListQueues(context.Background())
+	if err != nil || len(queues) != 1 || queues[0].Name != "General" {
+		t.Fatalf("ListQueues() = %#v, %v", queues, err)
+	}
+}
+
+func TestUnknownPageReturnsNotFound(t *testing.T) {
+	handler, _ := testHandler(t)
 	request := httptest.NewRequest(http.MethodGet, "/missing", nil)
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
-
 	if response.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusNotFound)
 	}
+}
+
+func testHandler(t *testing.T) (http.Handler, *sqlitestore.Store) {
+	t.Helper()
+	store, err := sqlitestore.Open(context.Background(), filepath.Join(t.TempDir(), "turnino.db"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	t.Cleanup(func() { store.Close() })
+	handler, err := New("test-version", store)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	return handler, store
+}
+
+func formRequest(method, target string, values url.Values, cookie *http.Cookie) *http.Request {
+	request := httptest.NewRequest(method, target, strings.NewReader(values.Encode()))
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if cookie != nil {
+		request.AddCookie(cookie)
+	}
+	return request
 }

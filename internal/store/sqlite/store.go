@@ -246,6 +246,25 @@ func (s *Store) RotateCounterToken(ctx context.Context, counterID int64, tokenHa
 	return nil
 }
 
+func (s *Store) ReactivateCounter(ctx context.Context, counterID int64, tokenHash []byte) error {
+	if len(tokenHash) != 32 {
+		return errors.New("counter token hash must be 32 bytes")
+	}
+	result, err := s.db.ExecContext(ctx,
+		"UPDATE counters SET token_hash = ?, enabled = 1 WHERE id = ?", tokenHash, counterID)
+	if err != nil {
+		return fmt.Errorf("reactivate counter: %w", err)
+	}
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read reactivated counter count: %w", err)
+	}
+	if updated == 0 {
+		return domain.ErrCounterNotFound
+	}
+	return nil
+}
+
 func (s *Store) CallNext(ctx context.Context, queueID int64, tokenHash []byte) (domain.Call, error) {
 	if len(tokenHash) != 32 {
 		return domain.Call{}, domain.ErrCounterUnavailable

@@ -1,0 +1,83 @@
+{{define "admin.html"}}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>Administration · Turnino</title>
+    <link rel="stylesheet" href="/static/app.css">
+  </head>
+  <body class="admin-body">
+    <header class="topbar">
+      <a class="brand" href="/">Turnino</a>
+      <form method="post" action="/admin/logout">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <button class="secondary" type="submit">Sign out</button>
+      </form>
+    </header>
+    <main class="admin-main">
+      <div>
+        <p class="eyebrow">Administration</p>
+        <h1 class="page-title">Queue setup</h1>
+      </div>
+      {{if .Error}}<p class="alert error">{{.Error}}</p>{{end}}
+      {{if .NewCounterToken}}
+      <section class="alert secret">
+        <strong>Counter token — copy it now.</strong>
+        <code>{{.NewCounterToken}}</code>
+        <span>It will not be shown again.</span>
+      </section>
+      {{end}}
+
+      <section class="admin-grid">
+        <article class="panel">
+          <h2>Queues</h2>
+          {{if .Queues}}
+          <div class="table-wrap"><table>
+            <thead><tr><th>Name</th><th>Number</th><th>Range</th></tr></thead>
+            <tbody>{{range .Queues}}<tr><td>{{.Name}}</td><td>{{if lt .CurrentValue .MinValue}}Not started{{else}}{{printf "%s%0*d" .Prefix .Digits .CurrentValue}}{{end}}</td><td>{{.MinValue}}–{{.MaxValue}} ({{.Digits}} digits)</td></tr>{{end}}</tbody>
+          </table></div>
+          {{else}}<p class="muted">No queues yet.</p>{{end}}
+          <h3>Add queue</h3>
+          <form method="post" action="/admin/queues" class="form-grid">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <label>Name<input name="name" required maxlength="100"></label>
+            <label>Prefix<input name="prefix" maxlength="3" placeholder="A"></label>
+            <label>Digits<input name="digits" type="number" value="3" min="1" max="6" required></label>
+            <label>First number<input name="min_value" type="number" value="1" min="0" required></label>
+            <label>Last number<input name="max_value" type="number" value="999" min="0" required></label>
+            <button type="submit">Add queue</button>
+          </form>
+        </article>
+
+        <article class="panel">
+          <h2>Counters</h2>
+          {{if .Counters}}
+          <div class="table-wrap"><table>
+            <thead><tr><th>Name</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>{{range .Counters}}<tr>
+              <td>{{.Name}}</td><td>{{if .Enabled}}Active{{else}}Revoked{{end}}</td>
+              <td class="actions">
+                {{if .Enabled}}
+                <form method="post" action="/admin/counters/{{.ID}}/rotate"><input type="hidden" name="csrf_token" value="{{$.CSRFToken}}"><button class="secondary" type="submit">Rotate token</button></form>
+                <form method="post" action="/admin/counters/{{.ID}}/revoke"><input type="hidden" name="csrf_token" value="{{$.CSRFToken}}"><button class="danger" type="submit">Revoke</button></form>
+                {{else}}
+                <form method="post" action="/admin/counters/{{.ID}}/reactivate"><input type="hidden" name="csrf_token" value="{{$.CSRFToken}}"><button type="submit">Reactivate</button></form>
+                {{end}}
+              </td>
+            </tr>{{end}}</tbody>
+          </table></div>
+          {{else}}<p class="muted">No counters yet.</p>{{end}}
+          <h3>Register counter</h3>
+          <form method="post" action="/admin/counters" class="stack">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <label>Name<input name="name" required maxlength="100" placeholder="Counter 1"></label>
+            <button type="submit">Register counter</button>
+          </form>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
+{{end}}

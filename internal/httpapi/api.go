@@ -19,6 +19,7 @@ type Store interface {
 	CreateCounter(context.Context, string, []byte) (domain.Counter, error)
 	RevokeCounter(context.Context, int64) error
 	RotateCounterToken(context.Context, int64, []byte) error
+	ReactivateCounter(context.Context, int64, []byte) error
 	CallNext(context.Context, int64, []byte) (domain.Call, error)
 }
 
@@ -33,6 +34,7 @@ func New(store Store) http.Handler {
 	mux.Handle("POST /admin/counters", api.adminOnly(http.HandlerFunc(api.createCounter)))
 	mux.Handle("DELETE /admin/counters/{counterID}", api.adminOnly(http.HandlerFunc(api.revokeCounter)))
 	mux.Handle("POST /admin/counters/{counterID}/token", api.adminOnly(http.HandlerFunc(api.rotateCounterToken)))
+	mux.Handle("POST /admin/counters/{counterID}/reactivate", api.adminOnly(http.HandlerFunc(api.reactivateCounter)))
 	mux.HandleFunc("POST /queues/{queueID}/calls/next", api.callNext)
 	return mux
 }
@@ -110,6 +112,27 @@ func (a *API) rotateCounterToken(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not rotate counter token")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"counter_id": counterID, "token": token})
+}
+
+func (a *API) reactivateCounter(w http.ResponseWriter, r *http.Request) {
+	counterID, err := parseID(r.PathValue("counterID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid counter id")
+		return
+	}
+	token, tokenHash, err := newToken()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not generate counter token")
+		return
+	}
+	if err := a.store.ReactivateCounter(r.Context(), counterID, tokenHash); errors.Is(err, domain.ErrCounterNotFound) {
+		writeError(w, http.StatusNotFound, err.Error())
+		return
+	} else if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not reactivate counter")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"counter_id": counterID, "token": token})

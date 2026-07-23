@@ -17,7 +17,7 @@
 - Automatic, manual and repeat calls
 - Operator, public monitor and counter display pages
 - SSE updates with reconnect and a conservative polling fallback
-- Essential administration (single-admin authentication and API complete; UI pending)
+- [x] Essential administration with browser login, protected forms and offline credential recovery
 - English and Italian UI using embedded JSON dictionaries, with English as the fallback language
 - Backup/export and sanitized demonstration data
 

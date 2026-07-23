@@ -53,6 +53,8 @@ func TestAdminAndCounterTokenFlow(t *testing.T) {
 
 	requestJSON(t, http.MethodDelete, server.URL+"/admin/counters/"+counterID, "", adminToken, http.StatusNoContent)
 	requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/next", "", newCounterToken, http.StatusUnauthorized)
+	reactivated := requestJSON(t, http.MethodPost, server.URL+"/admin/counters/"+counterID+"/reactivate", "", adminToken, http.StatusOK)
+	requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/next", "", reactivated["token"].(string), http.StatusCreated)
 }
 
 func TestAdminAPIUnavailableBeforeBootstrap(t *testing.T) {

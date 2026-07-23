@@ -13,8 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Atomic next-number allocation and call recording, including range wraparound.
 - Database-aware health checks and concurrency tests.
 - JSON endpoints and REST Client examples for queue creation, counter registration and authenticated next-number calls.
-- Revocable and rotatable counter credentials, stored only as SHA-256 hashes.
+- Revocable, rotatable and safely reactivatable counter credentials, stored only as SHA-256 hashes.
 - Write-once administrator bootstrap and Bearer-protected administration endpoints without users or roles.
+- Server-rendered administration UI with in-memory sessions, CSRF protection and queue/counter management.
+- Explicit offline administrator reset command and SQLite/WSL troubleshooting guidance.
 
 ## [0.1.0] - 2026-07-24
 

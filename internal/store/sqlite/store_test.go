@@ -168,6 +168,16 @@ func TestRevokeCounterRejectsTokenWithoutConsumingNumber(t *testing.T) {
 	if currentValue != -1 {
 		t.Fatalf("current value after rejected calls = %d, want -1", currentValue)
 	}
+	if err := store.ReactivateCounter(ctx, 1, newTokenHash[:]); err != nil {
+		t.Fatalf("ReactivateCounter() error = %v", err)
+	}
+	call, err := store.CallNext(ctx, queue.ID, newTokenHash[:])
+	if err != nil {
+		t.Fatalf("CallNext() after reactivation error = %v", err)
+	}
+	if call.SequenceValue != 0 {
+		t.Fatalf("sequence after reactivation = %d, want 0", call.SequenceValue)
+	}
 }
 
 func TestRotateCounterTokenInvalidatesPreviousToken(t *testing.T) {

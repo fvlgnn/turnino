@@ -30,6 +30,7 @@ make dev
 The public server starts without configuration. To bootstrap the administration API on a new database, set a random `TURNINO_ADMIN_TOKEN` of at least 20 characters for the first startup; Turnino persists only its SHA-256 hash. See `.env.example` and the development guide for configuration details.
 
 Open <http://localhost:8080>. The health endpoint is available at <http://localhost:8080/healthz>.
+The administration interface is available at <http://localhost:8080/admin> after the administrator credential has been bootstrapped.
 
 With Docker:
 
@@ -45,7 +46,7 @@ Turnino combines the English word “turn” with the Italian diminutive suffix 
 
 ## Project status
 
-See the [roadmap](docs/roadmap.md), [architecture](docs/architecture.md), and [development guide](docs/development.md). Italian project notes are available in [docs/it/README.md](docs/it/README.md).
+See the [roadmap](docs/roadmap.md), [architecture](docs/architecture.md), [development guide](docs/development.md), and [troubleshooting guide](docs/troubleshooting.md). Italian project notes are available in [docs/it/README.md](docs/it/README.md).
 
 ## License
 

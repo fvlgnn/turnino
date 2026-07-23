@@ -45,9 +45,14 @@ Authorization: Bearer {{rotateCounterToken.response.body.$.token}}
 DELETE {{baseUrl}}/api/v1/admin/counters/{{createCounter.response.body.$.id}}
 Authorization: Bearer {{adminToken}}
 
+### Reactivate a revoked counter and issue a fresh token
+# @name reactivateCounter
+POST {{baseUrl}}/api/v1/admin/counters/{{createCounter.response.body.$.id}}/reactivate
+Authorization: Bearer {{adminToken}}
+
 ### Call the next number with manually supplied values
-@queueId = 1
-@counterToken = replace-with-the-token-returned-when-registering-the-counter
+@queueId = 2
+@counterToken = hmbs60JhRuDmyYq_dg1xEVg7ZSzD_UNlh8S8D_hZXvo
 
 POST {{baseUrl}}/api/v1/queues/{{queueId}}/calls/next
 Authorization: Bearer {{counterToken}}

@@ -52,3 +52,7 @@ Turnino has one installation administrator and does not implement users or roles
 Each counter receives a separate random token. Counter tokens can call queues but cannot administer the installation. Tokens are returned only when created or rotated, and only their SHA-256 hashes are stored.
 
 Bearer tokens must be used only on a trusted local network or behind HTTPS. Turnino does not attempt to make plaintext HTTP safe on an untrusted network.
+
+The administration UI exchanges the administrator token for a random, twelve-hour in-memory session. Its cookie is `HttpOnly` and `SameSite=Strict`; state-changing forms also require a session-specific CSRF token. Sessions intentionally disappear when Turnino restarts.
+
+If the administrator token is lost, the server must be stopped and the explicit `turnino admin reset --confirm` command run against its data directory. There are no recovery questions, default passwords, or network reset endpoints.
