@@ -18,7 +18,7 @@
 - [x] Rendere atomica l'allocazione del prossimo numero.
 - [x] Implementare registrazione sportello con token revocabile.
 - [x] Implementare la chiamata automatica nel dominio, nella persistenza e nell'API HTTP.
-- [ ] Creare l'interfaccia operatore/Caller per la chiamata automatica.
+- [x] Creare l'interfaccia operatore/Caller per la chiamata automatica.
 - [ ] Implementare la chiamata di un numero personalizzato, validandolo rispetto alla numerazione della coda.
 - [ ] Implementare la richiamata dell'ultimo numero senza avanzare la coda.
 - [ ] Creare l'interfaccia Sportello per l'operatore e il relativo display pubblico.
@@ -32,6 +32,7 @@
 - [x] Aggiungere test del dominio, HTTP, persistenza e concorrenza.
 - [x] Documentare installazione e sviluppo nativi e con Docker.
 - [ ] Documentare installazione, avvio automatico e modalità kiosk su Raspberry Pi.
+- [ ] IDEA Vedi se possibile migliorare facilità di gestione caller (per registrazione, in una situazione reale potrebbe essere complicato registrare con token lo sportello)
 
 ## Fase 2 — Qualità e rilascio
 
@@ -45,4 +46,3 @@
 ## Fasi successive
 
 - [ ] Setting per temi, logo, banner, volume dettagliato e altre personalizzazioni.
-

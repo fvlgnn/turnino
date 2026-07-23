@@ -194,6 +194,96 @@ button.danger {
   background: #b42318;
 }
 
+.home-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.button-link {
+  display: inline-block;
+  padding: 0.7rem 1rem;
+  border-radius: 0.5rem;
+  background: #087f5b;
+  color: #fff;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.caller-main {
+  width: min(64rem, calc(100% - 3rem));
+  margin: 2.5rem auto;
+}
+
+.caller-token {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+}
+
+.caller-identity {
+  margin: 0 0 0.75rem;
+  color: #087f5b;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.caller-token summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.caller-token-content {
+  padding-top: 0.5rem;
+}
+
+.caller-token-form {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) auto auto;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.caller-status {
+  min-height: 1.5rem;
+  margin: 0 0 1.5rem;
+  font-weight: 700;
+}
+
+.caller-status.success {
+  color: #087f5b;
+}
+
+.caller-status.error {
+  color: #b42318;
+}
+
+.caller-queues {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+}
+
+.caller-queue {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.caller-queue h3,
+.caller-queue p {
+  margin-block: 0.25rem;
+}
+
+.caller-next {
+  flex: 0 0 auto;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .alert {
   padding: 1rem;
   border-radius: 0.75rem;
@@ -264,6 +354,18 @@ th {
   .topbar-actions {
     gap: 0.75rem;
   }
+
+  .caller-token-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .caller-token-form label {
+    grid-column: 1 / -1;
+  }
+
+  .caller-token-form button {
+    width: 100%;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -291,6 +393,14 @@ th {
   button.secondary {
     background: #30463a;
     color: #fff;
+  }
+
+  .caller-status.success {
+    color: #69dbb4;
+  }
+
+  .caller-status.error {
+    color: #ffb4ab;
   }
 
   th,

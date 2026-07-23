@@ -32,6 +32,10 @@ Authorization: Bearer {{adminToken}}
 POST {{baseUrl}}/api/v1/queues/{{createQueue.response.body.$.id}}/calls/next
 Authorization: Bearer {{createCounter.response.body.$.token}}
 
+### Resolve the counter associated with a browser token
+GET {{baseUrl}}/api/v1/counters/me
+Authorization: Bearer {{createCounter.response.body.$.token}}
+
 ### Rotate the counter token (the previous token stops working)
 # @name rotateCounterToken
 POST {{baseUrl}}/api/v1/admin/counters/{{createCounter.response.body.$.id}}/token

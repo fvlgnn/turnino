@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fvlgnn/turnino/internal/domain"
 	sqlitestore "github.com/fvlgnn/turnino/internal/store/sqlite"
 )
 
@@ -26,11 +27,50 @@ func TestHomePage(t *testing.T) {
 	for _, expected := range []string{
 		"Your turn, made simple.",
 		"Call the next number. Keep every counter, display, and waiting room in sync.",
+		`href="/caller"`,
 		"test-version",
 	} {
 		if !strings.Contains(response.Body.String(), expected) {
 			t.Errorf("response does not contain %q", expected)
 		}
+	}
+}
+
+func TestCallerPageListsQueues(t *testing.T) {
+	handler, store := testHandler(t)
+	if _, err := store.CreateQueue(context.Background(), domain.CreateQueueParams{
+		Name: "General", Prefix: "A", Digits: 3, MinValue: 1, MaxValue: 999,
+	}); err != nil {
+		t.Fatalf("CreateQueue() error = %v", err)
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/caller", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	for _, expected := range []string{
+		"Call a number",
+		"Counter token",
+		`id="caller-identity"`,
+		"General",
+		`data-queue-id="1"`,
+		`src="/static/caller.js"`,
+	} {
+		if !strings.Contains(response.Body.String(), expected) {
+			t.Errorf("response does not contain %q", expected)
+		}
+	}
+}
+
+func TestCallerPageWithoutQueues(t *testing.T) {
+	handler, _ := testHandler(t)
+	request := httptest.NewRequest(http.MethodGet, "/caller", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "No queues are configured.") {
+		t.Fatalf("empty caller page = %d %q", response.Code, response.Body.String())
 	}
 }
 

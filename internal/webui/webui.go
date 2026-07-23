@@ -94,6 +94,7 @@ func New(version string, store Store) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticFiles)))
 	mux.HandleFunc("GET /", application.home)
+	mux.HandleFunc("GET /caller", application.caller)
 	mux.HandleFunc("GET /admin", application.admin)
 	mux.HandleFunc("POST /admin/login", application.login)
 	mux.HandleFunc("POST /admin/logout", application.logout)
@@ -112,6 +113,18 @@ func (a *app) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.render(w, "index.html", a.page(r))
+}
+
+func (a *app) caller(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	queues, err := a.store.ListQueues(r.Context())
+	if err != nil {
+		http.Error(w, "Could not load queues", http.StatusInternalServerError)
+		return
+	}
+	data := a.page(r)
+	data.Queues = queues
+	a.render(w, "caller.html", data)
 }
 
 func (a *app) admin(w http.ResponseWriter, r *http.Request) {

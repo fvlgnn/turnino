@@ -204,8 +204,15 @@ func TestRevokeCounterRejectsTokenWithoutConsumingNumber(t *testing.T) {
 	store, queue, tokenHash := testStore(t, 0, 9)
 	ctx := context.Background()
 
+	counter, err := store.CounterForToken(ctx, tokenHash)
+	if err != nil || counter.Name != "Counter 1" {
+		t.Fatalf("CounterForToken() = %#v, %v", counter, err)
+	}
 	if err := store.RevokeCounter(ctx, 1); err != nil {
 		t.Fatalf("RevokeCounter() error = %v", err)
+	}
+	if _, err := store.CounterForToken(ctx, tokenHash); !errors.Is(err, domain.ErrCounterUnavailable) {
+		t.Fatalf("CounterForToken() after revoke error = %v, want ErrCounterUnavailable", err)
 	}
 	if _, err := store.CallNext(ctx, queue.ID, tokenHash); !errors.Is(err, domain.ErrCounterUnavailable) {
 		t.Fatalf("CallNext() with revoked token error = %v, want ErrCounterUnavailable", err)

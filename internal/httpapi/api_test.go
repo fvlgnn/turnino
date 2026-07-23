@@ -41,6 +41,11 @@ func TestAdminAndCounterTokenFlow(t *testing.T) {
 	counterID := strconv.Itoa(int(counter["id"].(float64)))
 	counterToken := counter["token"].(string)
 
+	currentCounter := requestJSON(t, http.MethodGet, server.URL+"/counters/me", "", counterToken, http.StatusOK)
+	if got := currentCounter["name"]; got != "Counter 1" {
+		t.Fatalf("current counter name = %v, want Counter 1", got)
+	}
+
 	call := requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/next", "", counterToken, http.StatusCreated)
 	if got := call["number"]; got != "A001" {
 		t.Fatalf("call number = %v, want A001", got)
@@ -52,6 +57,7 @@ func TestAdminAndCounterTokenFlow(t *testing.T) {
 	requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/next", "", newCounterToken, http.StatusCreated)
 
 	requestJSON(t, http.MethodDelete, server.URL+"/admin/counters/"+counterID, "", adminToken, http.StatusNoContent)
+	requestJSON(t, http.MethodGet, server.URL+"/counters/me", "", newCounterToken, http.StatusUnauthorized)
 	requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/next", "", newCounterToken, http.StatusUnauthorized)
 	reactivated := requestJSON(t, http.MethodPost, server.URL+"/admin/counters/"+counterID+"/reactivate", "", adminToken, http.StatusOK)
 	requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/next", "", reactivated["token"].(string), http.StatusCreated)

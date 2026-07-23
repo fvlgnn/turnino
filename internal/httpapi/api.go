@@ -17,6 +17,7 @@ type Store interface {
 	ValidateAdminToken(context.Context, []byte) (bool, error)
 	CreateQueue(context.Context, domain.CreateQueueParams) (domain.Queue, error)
 	CreateCounter(context.Context, string, []byte) (domain.Counter, error)
+	CounterForToken(context.Context, []byte) (domain.Counter, error)
 	RevokeCounter(context.Context, int64) error
 	RotateCounterToken(context.Context, int64, []byte) error
 	ReactivateCounter(context.Context, int64, []byte) error
@@ -35,6 +36,7 @@ func New(store Store) http.Handler {
 	mux.Handle("DELETE /admin/counters/{counterID}", api.adminOnly(http.HandlerFunc(api.revokeCounter)))
 	mux.Handle("POST /admin/counters/{counterID}/token", api.adminOnly(http.HandlerFunc(api.rotateCounterToken)))
 	mux.Handle("POST /admin/counters/{counterID}/reactivate", api.adminOnly(http.HandlerFunc(api.reactivateCounter)))
+	mux.HandleFunc("GET /counters/me", api.currentCounter)
 	mux.HandleFunc("POST /queues/{queueID}/calls/next", api.callNext)
 	return mux
 }
@@ -136,6 +138,25 @@ func (a *API) reactivateCounter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"counter_id": counterID, "token": token})
+}
+
+func (a *API) currentCounter(w http.ResponseWriter, r *http.Request) {
+	token, ok := bearerToken(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "missing bearer token")
+		return
+	}
+	tokenHash := credential.Hash(token)
+	counter, err := a.store.CounterForToken(r.Context(), tokenHash[:])
+	if errors.Is(err, domain.ErrCounterUnavailable) {
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not load counter")
+		return
+	}
+	writeJSON(w, http.StatusOK, counterResponse(counter))
 }
 
 func (a *API) callNext(w http.ResponseWriter, r *http.Request) {

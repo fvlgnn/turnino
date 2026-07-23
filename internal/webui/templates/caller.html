@@ -1,0 +1,75 @@
+{{define "caller.html"}}
+<!doctype html>
+<html lang="{{.Lang}}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>{{t .Lang "caller.title"}} · {{.Settings.InstallationName}}</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <script src="/static/caller.js" defer></script>
+  </head>
+  <body class="admin-body">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="/">{{.Settings.InstallationName}}</a>
+        <nav class="language-switch" aria-label="{{t .Lang "common.language"}}"><a href="?lang=en">{{t .Lang "common.english"}}</a><a href="?lang=it">{{t .Lang "common.italian"}}</a></nav>
+      </div>
+    </header>
+    <main
+      class="caller-main"
+      data-missing-token="{{t .Lang "caller.missing_token"}}"
+      data-token-saved="{{t .Lang "caller.token_saved"}}"
+      data-token-forgotten="{{t .Lang "caller.token_forgotten"}}"
+      data-counter-prefix="{{t .Lang "caller.counter_prefix"}}"
+      data-calling="{{t .Lang "caller.calling"}}"
+      data-call-failed="{{t .Lang "caller.call_failed"}}"
+      data-invalid-token="{{t .Lang "caller.invalid_token"}}"
+      data-called-prefix="{{t .Lang "caller.called_prefix"}}"
+      data-called-on="{{t .Lang "caller.called_on"}}">
+      <div>
+        <p class="eyebrow">{{t .Lang "caller.operator"}}</p>
+        <h1 class="page-title">{{t .Lang "caller.title"}}</h1>
+      </div>
+
+      <p id="caller-identity" class="caller-identity" hidden></p>
+      <details id="caller-token-settings" class="panel caller-token" open>
+        <summary>{{t .Lang "caller.configure_counter"}}</summary>
+        <div class="caller-token-content">
+          <p class="muted">{{t .Lang "caller.token_help"}}</p>
+          <form id="caller-token-form" class="caller-token-form">
+            <label>{{t .Lang "caller.counter_token"}}
+              <input id="caller-token" type="password" required autocomplete="off" spellcheck="false">
+            </label>
+            <button type="submit">{{t .Lang "caller.save_token"}}</button>
+            <button id="caller-forget-token" class="secondary" type="button">{{t .Lang "caller.forget_token"}}</button>
+          </form>
+        </div>
+      </details>
+
+      <p id="caller-status" class="caller-status" role="status" aria-live="polite"></p>
+
+      <section>
+        <h2>{{t .Lang "caller.queues"}}</h2>
+        {{if .Queues}}
+        <div class="caller-queues">
+          {{range .Queues}}
+          <article class="panel caller-queue">
+            <div>
+              <h3>{{.Name}}</h3>
+              <p class="muted">{{t $.Lang "caller.current_number"}}:
+                <strong data-current-number>{{if lt .CurrentValue .MinValue}}{{t $.Lang "queues.not_started"}}{{else}}{{printf "%s%0*d" .Prefix .Digits .CurrentValue}}{{end}}</strong>
+              </p>
+            </div>
+            <button class="caller-next" type="button" data-queue-id="{{.ID}}">{{t $.Lang "caller.call_next"}}</button>
+          </article>
+          {{end}}
+        </div>
+        {{else}}
+        <p class="panel muted">{{t .Lang "caller.no_queues"}}</p>
+        {{end}}
+      </section>
+    </main>
+  </body>
+</html>
+{{end}}

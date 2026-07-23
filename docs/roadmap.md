@@ -16,7 +16,7 @@
 - [x] Atomic next-number allocation and call recording
 - [x] Counter registration with revocable and rotatable browser tokens
 - [x] Automatic next-number call in the domain, persistence layer and HTTP API
-- [ ] Operator/caller page for automatic calls
+- [x] Operator/caller page for automatic calls
 - [ ] Validated custom-number calls from the operator page
 - [ ] Repeat the last call without advancing the queue
 - [ ] Counter page for the operator and dedicated counter display

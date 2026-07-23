@@ -43,6 +43,8 @@ Gli endpoint sotto `/api/v1/admin` richiedono il token amministrativo. L'endpoin
 
 In alternativa, impostare manualmente `queueId` e `counterToken` nell'ultima sezione del file `.rest`. Non inserire credenziali direttamente nel file versionato.
 
+Per provare il flusso dal browser, registrare uno sportello nell'amministrazione, copiare il token mostrato una sola volta, aprire <http://localhost:8080/caller> e salvarlo nel browser. Il Caller conserva il token in `localStorage`; usare “Dimentica token” su postazioni condivise o prima di dismettere il browser. Rotazione e revoca rendono immediatamente inutilizzabile il valore salvato.
+
 ## Comandi utili
 
 ```sh

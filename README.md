@@ -31,6 +31,7 @@ The public server starts without configuration. To bootstrap the administration 
 
 Open <http://localhost:8080>. The health endpoint is available at <http://localhost:8080/healthz>.
 The administration interface is available at <http://localhost:8080/admin> after the administrator credential has been bootstrapped.
+The operator interface is available at <http://localhost:8080/caller>. Paste the token issued when its counter was registered; the token remains in that browser and authenticates calls to the existing API.
 
 With Docker:
 

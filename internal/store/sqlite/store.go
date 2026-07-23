@@ -270,6 +270,27 @@ func (s *Store) ListCounters(ctx context.Context) ([]domain.Counter, error) {
 	return counters, nil
 }
 
+func (s *Store) CounterForToken(ctx context.Context, tokenHash []byte) (domain.Counter, error) {
+	if len(tokenHash) != 32 {
+		return domain.Counter{}, domain.ErrCounterUnavailable
+	}
+	var counter domain.Counter
+	var createdAt int64
+	err := s.db.QueryRowContext(ctx, `
+		SELECT id, name, enabled, created_at
+		FROM counters
+		WHERE token_hash = ? AND enabled = 1`, tokenHash,
+	).Scan(&counter.ID, &counter.Name, &counter.Enabled, &createdAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return domain.Counter{}, domain.ErrCounterUnavailable
+	}
+	if err != nil {
+		return domain.Counter{}, fmt.Errorf("get counter for token: %w", err)
+	}
+	counter.CreatedAt = time.Unix(createdAt, 0).UTC()
+	return counter, nil
+}
+
 func (s *Store) RevokeCounter(ctx context.Context, counterID int64) error {
 	result, err := s.db.ExecContext(ctx, "UPDATE counters SET enabled = 0 WHERE id = ?", counterID)
 	if err != nil {
