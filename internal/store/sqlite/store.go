@@ -60,6 +60,16 @@ func (s *Store) Ping(ctx context.Context) error {
 	return nil
 }
 
+func (s *Store) Backup(ctx context.Context, destination string) error {
+	if strings.TrimSpace(destination) == "" {
+		return errors.New("backup destination is required")
+	}
+	if _, err := s.db.ExecContext(ctx, "VACUUM INTO ?", destination); err != nil {
+		return fmt.Errorf("backup sqlite database: %w", err)
+	}
+	return nil
+}
+
 func (s *Store) BootstrapAdmin(ctx context.Context, tokenHash []byte) (bool, error) {
 	if len(tokenHash) != 32 {
 		return false, errors.New("admin token hash must be 32 bytes")
@@ -320,6 +330,39 @@ func (s *Store) CallNext(ctx context.Context, queueID int64, tokenHash []byte) (
 		return domain.Call{}, fmt.Errorf("commit call transaction: %w", err)
 	}
 	return call, nil
+}
+
+func (s *Store) ListCallRecords(ctx context.Context) ([]domain.CallRecord, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT calls.id, calls.queue_id, calls.counter_id, calls.number,
+		       calls.sequence_value, calls.kind, calls.called_at,
+		       queues.name, counters.name
+		FROM calls
+		JOIN queues ON queues.id = calls.queue_id
+		JOIN counters ON counters.id = calls.counter_id
+		ORDER BY calls.id`)
+	if err != nil {
+		return nil, fmt.Errorf("list call records: %w", err)
+	}
+	defer rows.Close()
+	records := make([]domain.CallRecord, 0)
+	for rows.Next() {
+		var record domain.CallRecord
+		var calledAt int64
+		if err := rows.Scan(
+			&record.ID, &record.QueueID, &record.CounterID, &record.Number,
+			&record.SequenceValue, &record.Kind, &calledAt,
+			&record.QueueName, &record.CounterName,
+		); err != nil {
+			return nil, fmt.Errorf("scan call record: %w", err)
+		}
+		record.CalledAt = time.Unix(calledAt, 0).UTC()
+		records = append(records, record)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate call records: %w", err)
+	}
+	return records, nil
 }
 
 func (s *Store) migrate(ctx context.Context) error {

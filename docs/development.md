@@ -30,6 +30,32 @@ Browser messages are stored in `internal/webui/translations/en.json` and `it.jso
 
 Keep keys flat and grouped by feature. Tests ensure that every English key has an Italian translation and that missing localized values fall back to English.
 
+## Data maintenance commands
+
+After `make build`, create a consistent SQLite snapshot with:
+
+```sh
+./bin/turnino backup --data-dir ./data --output ./backups/turnino-backup.db
+```
+
+The backup uses SQLite `VACUUM INTO`, includes committed WAL content and can run while Turnino is active. The destination must not already exist. Backup files contain installation settings, credential hashes and operational history, so store them as sensitive data.
+
+Export call history as UTF-8 CSV:
+
+```sh
+./bin/turnino export calls --data-dir ./data --output ./exports/calls.csv
+```
+
+The CSV columns are `id`, `number`, `kind`, `queue_id`, `queue`, `counter_id`, `counter`, and UTC `called_at`.
+
+Create a disposable demonstration database:
+
+```sh
+./bin/turnino demo create --output /tmp/turnino-demo.db
+```
+
+The generator creates two synthetic queues, two synthetic counters and eleven calls. Counter tokens are randomly generated and immediately discarded; no administrator credential is configured. Generate a fresh database when needed instead of committing a runtime `.db` file.
+
 ## Module path
 
 The Go module is `github.com/fvlgnn/turnino`.

@@ -40,6 +40,16 @@ docker compose up --build
 
 Runtime data, including the automatically migrated `turnino.db` database, is written to `./data` for native development and to the `turnino-data` volume with Compose.
 
+Maintenance commands create new files and never overwrite an existing destination:
+
+```sh
+./bin/turnino backup --data-dir ./data --output ./backups/turnino.db
+./bin/turnino export calls --data-dir ./data --output ./exports/calls.csv
+./bin/turnino demo create --output ./data/turnino-demo.db
+```
+
+Backups are consistent SQLite snapshots and may be created while Turnino is running. The demonstration database contains only synthetic records and discarded random credentials.
+
 ## Why Turnino?
 
 Turnino combines the English word “turn” with the Italian diminutive suffix “-ino”. It describes a small, friendly system that tells people when it is their turn. The name also continues a personal tradition started with Gianino, the author's home automation project.

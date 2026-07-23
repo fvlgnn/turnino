@@ -35,8 +35,17 @@ func main() {
 }
 
 func run() error {
-	if len(os.Args) >= 2 && os.Args[1] == "admin" {
-		return runAdminCommand(os.Args[2:], os.Stdout)
+	if len(os.Args) >= 2 {
+		switch os.Args[1] {
+		case "admin":
+			return runAdminCommand(os.Args[2:], os.Stdout)
+		case "backup":
+			return runBackupCommand(os.Args[2:], os.Stdout)
+		case "export":
+			return runExportCommand(os.Args[2:], os.Stdout)
+		case "demo":
+			return runDemoCommand(os.Args[2:], os.Stdout)
+		}
 	}
 
 	addr := flag.String("addr", envOr("TURNINO_ADDR", ":8080"), "HTTP listen address")

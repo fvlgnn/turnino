@@ -50,6 +50,12 @@ type Call struct {
 	CalledAt      time.Time
 }
 
+type CallRecord struct {
+	Call
+	QueueName   string
+	CounterName string
+}
+
 type CreateQueueParams struct {
 	Name     string
 	Prefix   string

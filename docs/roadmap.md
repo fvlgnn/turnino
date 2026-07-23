@@ -1,6 +1,6 @@
 # Roadmap
 
-## Bootstrap (completed)
+## Phase 0 — Bootstrap (completed)
 
 - Repository conventions and documentation
 - Minimal HTTP server, embedded UI, health check and graceful shutdown
@@ -8,29 +8,35 @@
 - CI and tagged multi-architecture releases
 - Final product-name decision
 
-## v0.1.0 — Core queue calling (current)
+## Phase 1 — Core queue calling (current)
 
 - [x] SQLite schema and automatic migrations
 - [x] Queue domain and configurable numbering policies
+- [ ] Installation-wide settings for display and localization preferences
 - [x] Atomic next-number allocation and call recording
 - [x] Counter registration with revocable and rotatable browser tokens
-- Automatic, manual and repeat calls
-- Operator, public monitor and counter display pages
-- SSE updates with reconnect and a conservative polling fallback
+- [x] Automatic next-number call in the domain, persistence layer and HTTP API
+- [ ] Operator/caller page for automatic calls
+- [ ] Validated custom-number calls from the operator page
+- [ ] Repeat the last call without advancing the queue
+- [ ] Counter page for the operator and dedicated counter display
+- [ ] Full-screen public monitor with recent calls, visual emphasis and an audible cue
+- [ ] SSE updates with reconnect and a conservative polling fallback
 - [x] Essential administration with browser login, protected forms and offline credential recovery
 - [x] English and Italian UI using embedded JSON dictionaries, with English as the fallback language
-- Backup/export and sanitized demonstration data
+- [x] Consistent SQLite backup and call-history export
+- [x] Reproducible demonstration database containing only synthetic data and unusable credentials
 
-## v0.2 — Adaptation and polish
+## Phase 2 — Adaptation and polish
 
 - Configurable themes, logo and banner
 - Daily or manual numbering reset
-- CSV call export and database backup
+- Backup download from the administration UI, retention policy and filtered exports
 - Optional browser speech synthesis
 - Installable operator PWA
 - Accessibility and kiosk-mode documentation
 
-## Later, only with validated demand
+## Future phases, only with validated demand
 
 - Ticket issuing and QR codes
 - Priority and transfer workflows

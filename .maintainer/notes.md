@@ -72,6 +72,19 @@ docker compose start turnino
 
 Il comando sostituisce la credenziale amministrativa e stampa il nuovo token una sola volta. Conservarlo e aggiornare il `.env` locale. Non eseguire il reset mentre Turnino è attivo.
 
+## Backup, export e dati demo
+
+```sh
+make build
+./bin/turnino backup --data-dir ./data --output ./backups/turnino-backup.db
+./bin/turnino export calls --data-dir ./data --output ./exports/calls.csv
+./bin/turnino demo create --output /tmp/turnino-demo.db
+```
+
+I comandi non sovrascrivono file esistenti. Il backup è uno snapshot SQLite consistente e può essere creato mentre Turnino è attivo. Backup e CSV sono dati sensibili; il solo database `demo`, generato con dati sintetici e credenziali casuali scartate, è adatto a esempi e screenshot.
+
+Per ripristinare, fermare Turnino, spostare il database corrente con un nome di sicurezza, copiare il backup come `data/turnino.db` e riavviare. Non mescolare il backup con vecchi file `-wal` o `-shm`; vedere `docs/troubleshooting.md`.
+
 ## Ispezionare SQLite da Windows/WSL
 
 Non aprire il database originale da HeidiSQL tramite `\\wsl.localhost\...`: WAL e locking attraversano due ambienti diversi. Fermare Turnino, verificare che non esistano processi o file `turnino.db-wal`/`turnino.db-shm`, quindi copiare `turnino.db` sotto `/mnt/c/...` e aprire la copia dal percorso Windows. Non copiare mai la copia sopra il database originale e non eliminare manualmente i file WAL. Vedere `docs/troubleshooting.md`.
