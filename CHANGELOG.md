@@ -6,7 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-In working! Improvements and fix.
+### Added
+
+- SQLite persistence using a pure-Go driver, WAL mode and embedded automatic migrations.
+- Queue and counter domain models with configurable queue prefixes, ranges and zero padding.
+- Atomic next-number allocation and call recording, including range wraparound.
+- Database-aware health checks and concurrency tests.
+- JSON endpoints and REST Client examples for queue creation, counter registration and authenticated next-number calls.
+- Revocable and rotatable counter credentials, stored only as SHA-256 hashes.
+- Write-once administrator bootstrap and Bearer-protected administration endpoints without users or roles.
 
 ## [0.1.0] - 2026-07-24
 
@@ -21,4 +29,3 @@ In working! Improvements and fix.
 
 [Unreleased]: https://github.com/fvlgnn/turnino/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/fvlgnn/turnino/releases/tag/v0.1.0
-

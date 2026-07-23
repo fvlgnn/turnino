@@ -18,13 +18,15 @@ docker compose up --build
 
 Configuration is documented in `.env.example`. Go does not load `.env` itself; export the variables in your shell or let an editor/task runner load them.
 
+For a new database, generate a random administration token, set it as `TURNINO_ADMIN_TOKEN`, and start Turnino once. The credential is bootstrapped only when none exists and cannot be overwritten by changing the environment variable. Keep the original token outside the repository; administration requests use it as a Bearer token.
+
 ## Module path
 
 The Go module is `github.com/fvlgnn/turnino`.
 
 ## Pull-request checks
 
-CI verifies formatting, `go vet`, race-enabled tests, compilation, and a complete container build. Dependabot checks Go modules, GitHub Actions, and Docker base images monthly.
+CI verifies formatting, `go vet`, race-enabled tests, compilation, and a complete container build. Dependabot checks Go modules, GitHub Actions, and Docker base images quarterly.
 
 ## Release process
 

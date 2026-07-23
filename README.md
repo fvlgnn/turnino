@@ -6,7 +6,7 @@ Tiny self-hosted queue calling and display system. Built with Go, SQLite and Ser
 
 Turnino is the modern rewrite of a queue display system that has run for years on modest hardware, including Raspberry Pi. It keeps the original idea: one server, a browser for each operator, a public monitor, optional counter displays, and a small administration page.
 
-The project is in its bootstrap phase. The HTTP foundation and delivery pipeline are present; queue operations and persistence are the next milestone.
+The project is in active alpha development. The HTTP foundation, delivery pipeline and SQLite persistence layer are present; the operator and display workflows are being built toward v0.1.0.
 
 ## Principles
 
@@ -27,7 +27,7 @@ Go 1.25 or newer is required.
 make dev
 ```
 
-The defaults need no configuration. Copy values from `.env.example` into your shell environment when you want to override them.
+The public server starts without configuration. To bootstrap the administration API on a new database, set a random `TURNINO_ADMIN_TOKEN` of at least 20 characters for the first startup; Turnino persists only its SHA-256 hash. See `.env.example` and the development guide for configuration details.
 
 Open <http://localhost:8080>. The health endpoint is available at <http://localhost:8080/healthz>.
 
@@ -37,7 +37,7 @@ With Docker:
 docker compose up --build
 ```
 
-Runtime data is written to `./data` for native development and to the `turnino-data` volume with Compose.
+Runtime data, including the automatically migrated `turnino.db` database, is written to `./data` for native development and to the `turnino-data` volume with Compose.
 
 ## Why Turnino?
 

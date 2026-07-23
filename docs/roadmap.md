@@ -1,6 +1,6 @@
 # Roadmap
 
-## Bootstrap (current)
+## Bootstrap (completed)
 
 - Repository conventions and documentation
 - Minimal HTTP server, embedded UI, health check and graceful shutdown
@@ -8,15 +8,16 @@
 - CI and tagged multi-architecture releases
 - Final product-name decision
 
-## v0.1 — Core queue calling
+## v0.1.0 — Core queue calling (current)
 
-- SQLite schema and automatic migrations
-- Queues and configurable numbering policies
-- Counter registration with revocable browser tokens
+- [x] SQLite schema and automatic migrations
+- [x] Queue domain and configurable numbering policies
+- [x] Atomic next-number allocation and call recording
+- [x] Counter registration with revocable and rotatable browser tokens
 - Automatic, manual and repeat calls
 - Operator, public monitor and counter display pages
 - SSE updates with reconnect and a conservative polling fallback
-- Essential administration
+- Essential administration (single-admin authentication and API complete; UI pending)
 - English and Italian UI using embedded JSON dictionaries, with English as the fallback language
 - Backup/export and sanitized demonstration data
 

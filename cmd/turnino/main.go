@@ -5,14 +5,19 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
+	"github.com/fvlgnn/turnino/internal/credential"
+	"github.com/fvlgnn/turnino/internal/httpapi"
+	sqlitestore "github.com/fvlgnn/turnino/internal/store/sqlite"
 	"github.com/fvlgnn/turnino/internal/webui"
 )
 
@@ -30,6 +35,10 @@ func main() {
 }
 
 func run() error {
+	if len(os.Args) >= 2 && os.Args[1] == "admin" {
+		return runAdminCommand(os.Args[2:], os.Stdout)
+	}
+
 	addr := flag.String("addr", envOr("TURNINO_ADDR", ":8080"), "HTTP listen address")
 	dataDir := flag.String("data-dir", envOr("TURNINO_DATA_DIR", "./data"), "persistent data directory")
 	showVersion := flag.Bool("version", false, "print version and exit")
@@ -43,6 +52,40 @@ func run() error {
 	if err := os.MkdirAll(*dataDir, 0o750); err != nil {
 		return fmt.Errorf("create data directory: %w", err)
 	}
+	db, err := sqlitestore.Open(context.Background(), filepath.Join(*dataDir, "turnino.db"))
+	if err != nil {
+		return fmt.Errorf("initialize database: %w", err)
+	}
+	defer db.Close()
+	adminToken := strings.TrimSpace(os.Getenv("TURNINO_ADMIN_TOKEN"))
+	if adminToken != "" {
+		if len(adminToken) < credential.MinAdminTokenLength {
+			return fmt.Errorf("TURNINO_ADMIN_TOKEN must contain at least %d characters", credential.MinAdminTokenLength)
+		}
+		tokenHash := credential.Hash(adminToken)
+		created, err := db.BootstrapAdmin(context.Background(), tokenHash[:])
+		if err != nil {
+			return fmt.Errorf("bootstrap administrator: %w", err)
+		}
+		if created {
+			slog.Info("administrator credential configured; TURNINO_ADMIN_TOKEN can be removed before the next restart")
+		} else {
+			valid, err := db.ValidateAdminToken(context.Background(), tokenHash[:])
+			if err != nil {
+				return fmt.Errorf("validate configured administrator: %w", err)
+			}
+			if !valid {
+				return errors.New("TURNINO_ADMIN_TOKEN does not match the administrator credential already stored")
+			}
+		}
+	}
+	adminConfigured, err := db.AdminConfigured(context.Background())
+	if err != nil {
+		return fmt.Errorf("check administrator configuration: %w", err)
+	}
+	if !adminConfigured {
+		slog.Warn("administrator is not configured; set TURNINO_ADMIN_TOKEN and restart to enable administration APIs")
+	}
 
 	ui, err := webui.New(version)
 	if err != nil {
@@ -50,8 +93,13 @@ func run() error {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", httpapi.New(db)))
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		if err := db.Ping(r.Context()); err != nil {
+			http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok\n"))
 	})
@@ -88,6 +136,39 @@ func run() error {
 		}
 	}
 
+	return nil
+}
+
+func runAdminCommand(args []string, output io.Writer) error {
+	if len(args) == 0 || args[0] != "reset" {
+		return errors.New("usage: turnino admin reset --data-dir PATH --confirm")
+	}
+	flags := flag.NewFlagSet("admin reset", flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	dataDir := flags.String("data-dir", envOr("TURNINO_DATA_DIR", "./data"), "persistent data directory")
+	confirm := flags.Bool("confirm", false, "confirm the offline credential reset")
+	if err := flags.Parse(args[1:]); err != nil {
+		return fmt.Errorf("parse admin reset options: %w", err)
+	}
+	if !*confirm {
+		return errors.New("admin reset requires --confirm; stop Turnino before running it")
+	}
+	db, err := sqlitestore.Open(context.Background(), filepath.Join(*dataDir, "turnino.db"))
+	if err != nil {
+		return fmt.Errorf("open database for offline admin reset: %w", err)
+	}
+	defer db.Close()
+	token, err := credential.Generate()
+	if err != nil {
+		return fmt.Errorf("generate administrator credential: %w", err)
+	}
+	tokenHash := credential.Hash(token)
+	if err := db.ResetAdmin(context.Background(), tokenHash[:]); err != nil {
+		return err
+	}
+	fmt.Fprintln(output, "Administrator credential reset successfully.")
+	fmt.Fprintln(output, "Store this token securely; it will not be shown again:")
+	fmt.Fprintln(output, token)
 	return nil
 }
 

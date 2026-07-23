@@ -17,6 +17,32 @@ docker compose up --build
 Applicazione: <http://localhost:8080>
 Health check: <http://localhost:8080/healthz>
 
+## Provare le API con REST Client
+
+Al primo avvio copiare `.env.example` in `.env`, generare una credenziale amministrativa lunga e inserirla come `TURNINO_ADMIN_TOKEN`. Il file `.env` è escluso da Git. Per esportarne i valori e avviare Turnino:
+
+```sh
+openssl rand -base64 32
+set -a
+. ./.env
+set +a
+make dev
+```
+
+Turnino salva soltanto l'hash SHA-256 nel database. Conservare il valore originale in un password manager: servirà per amministrare l'installazione. Dopo il bootstrap la variabile può essere rimossa dall'ambiente del server, ma questo non sostituisce né recupera la credenziale già registrata.
+
+Il file `api/turnino.rest` è compatibile con l'estensione VS Code `humao.rest-client` e legge `TURNINO_ADMIN_TOKEN` dal file `.env` mediante `{{$dotenv TURNINO_ADMIN_TOKEN}}`. Aprire il file ed eseguire nell'ordine:
+
+1. `Create a queue`;
+2. `Register a counter`;
+3. `Call the next number using IDs and token from the responses above`.
+
+REST Client recupera automaticamente dalle prime due risposte l'ID della coda e il token dello sportello. Il token viene mostrato in chiaro soltanto durante la registrazione; nel database ne viene conservato l'hash SHA-256.
+
+Gli endpoint sotto `/api/v1/admin` richiedono il token amministrativo. L'endpoint `calls/next` richiede invece il token dello sportello restituito al momento della registrazione. Gli esempi successivi mostrano anche rotazione e revoca; eseguire la revoca per ultima.
+
+In alternativa, impostare manualmente `queueId` e `counterToken` nell'ultima sezione del file `.rest`. Non inserire credenziali direttamente nel file versionato.
+
 ## Comandi utili
 
 ```sh
@@ -35,6 +61,7 @@ Variabili disponibili in `.env.example`:
 TURNINO_ADDR=:8080
 TURNINO_DATA_DIR=./data
 TURNINO_LOG_LEVEL=info
+TURNINO_ADMIN_TOKEN=
 ```
 
 ## Decisioni da ricordare
@@ -43,6 +70,7 @@ TURNINO_LOG_LEVEL=info
 - Module path: `github.com/fvlgnn/turnino`
 - Licenza: `AGPL-3.0-only`
 - Nome definitivo: `Turnino`
+- Bootstrap amministratore: impostare `TURNINO_ADMIN_TOKEN` soltanto quando il database non contiene ancora la credenziale; conservarne il valore originale fuori dal repository.
 
 ## Pubblicare una release
 

@@ -1,0 +1,53 @@
+@baseUrl = http://localhost:8080
+@adminToken = {{$dotenv TURNINO_ADMIN_TOKEN}}
+
+### Health check
+GET {{baseUrl}}/healthz
+
+### Create a queue
+# @name createQueue
+POST {{baseUrl}}/api/v1/admin/queues
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "General {{$timestamp}}",
+  "prefix": "A",
+  "digits": 2,
+  "min_value": 0,
+  "max_value": 99
+}
+
+### Register a counter (the token is returned only in this response)
+# @name createCounter
+POST {{baseUrl}}/api/v1/admin/counters
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Counter {{$timestamp}}"
+}
+
+### Call the next number using IDs and token from the responses above
+POST {{baseUrl}}/api/v1/queues/{{createQueue.response.body.$.id}}/calls/next
+Authorization: Bearer {{createCounter.response.body.$.token}}
+
+### Rotate the counter token (the previous token stops working)
+# @name rotateCounterToken
+POST {{baseUrl}}/api/v1/admin/counters/{{createCounter.response.body.$.id}}/token
+Authorization: Bearer {{adminToken}}
+
+### Call using the rotated counter token
+POST {{baseUrl}}/api/v1/queues/{{createQueue.response.body.$.id}}/calls/next
+Authorization: Bearer {{rotateCounterToken.response.body.$.token}}
+
+### Revoke the counter (run this last)
+DELETE {{baseUrl}}/api/v1/admin/counters/{{createCounter.response.body.$.id}}
+Authorization: Bearer {{adminToken}}
+
+### Call the next number with manually supplied values
+@queueId = 1
+@counterToken = replace-with-the-token-returned-when-registering-the-counter
+
+POST {{baseUrl}}/api/v1/queues/{{queueId}}/calls/next
+Authorization: Bearer {{counterToken}}
