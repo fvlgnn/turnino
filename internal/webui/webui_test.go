@@ -74,6 +74,66 @@ func TestCallerPageWithoutQueues(t *testing.T) {
 	}
 }
 
+func TestMonitorPageShowsRecentCallsAndTestMode(t *testing.T) {
+	handler, store := testHandler(t)
+	queue, err := store.CreateQueue(context.Background(), domain.CreateQueueParams{
+		Name: "General services", Prefix: "A", Digits: 3, MinValue: 1, MaxValue: 999,
+	})
+	if err != nil {
+		t.Fatalf("CreateQueue() error = %v", err)
+	}
+	tokenHash := sha256.Sum256([]byte("monitor-test-counter-token"))
+	if _, err := store.CreateCounter(context.Background(), "Counter 1", tokenHash[:]); err != nil {
+		t.Fatalf("CreateCounter() error = %v", err)
+	}
+	if _, err := store.CallNext(context.Background(), queue.ID, tokenHash[:]); err != nil {
+		t.Fatalf("CallNext() error = %v", err)
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/monitor?test=1", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	for _, expected := range []string{
+		"Public monitor",
+		"General services",
+		"A001",
+		"Counter 1",
+		`src="/static/monitor.js"`,
+		`href="/caller"`,
+		`data-highlight-ms="5000"`,
+		`id="monitor-sound"`,
+		`id="monitor-fullscreen"`,
+	} {
+		if !strings.Contains(response.Body.String(), expected) {
+			t.Errorf("response does not contain %q", expected)
+		}
+	}
+}
+
+func TestMonitorPageWithoutCalls(t *testing.T) {
+	handler, _ := testHandler(t)
+	request := httptest.NewRequest(http.MethodGet, "/monitor", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "Waiting for the first call") {
+		t.Fatalf("empty monitor page = %d %q", response.Code, response.Body.String())
+	}
+	if strings.Contains(response.Body.String(), "Open Caller for testing") {
+		t.Fatal("normal monitor unexpectedly exposes test-mode link")
+	}
+	for _, unexpected := range []string{`id="monitor-sound"`, `id="monitor-fullscreen"`} {
+		if strings.Contains(response.Body.String(), unexpected) {
+			t.Fatalf("normal monitor unexpectedly contains %s", unexpected)
+		}
+	}
+	if !strings.Contains(response.Body.String(), `class="monitor-connection compact"`) {
+		t.Fatal("normal monitor does not contain the compact connection indicator")
+	}
+}
+
 func TestItalianFromAcceptLanguage(t *testing.T) {
 	handler, _ := testHandler(t)
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -219,6 +279,9 @@ func TestAdminLoginCreateQueueAndCSRF(t *testing.T) {
 	if updateSettingsResponse.Code != http.StatusSeeOther {
 		t.Fatalf("update settings status = %d, want %d", updateSettingsResponse.Code, http.StatusSeeOther)
 	}
+	if location := updateSettingsResponse.Header().Get("Location"); location != "/admin?notice=settings-saved" {
+		t.Fatalf("update settings redirect = %q, want settings confirmation", location)
+	}
 	settings, err := store.GetSettings(context.Background())
 	if err != nil {
 		t.Fatalf("GetSettings() error = %v", err)
@@ -227,6 +290,14 @@ func TestAdminLoginCreateQueueAndCSRF(t *testing.T) {
 		settings.RecentCallsLimit != 12 || settings.SoundEnabled ||
 		settings.HighlightDurationSeconds != 7 {
 		t.Fatalf("settings after form update = %#v", settings)
+	}
+
+	savedDashboard := httptest.NewRequest(http.MethodGet, "/admin?notice=settings-saved", nil)
+	savedDashboard.AddCookie(cookies[0])
+	savedDashboardResponse := httptest.NewRecorder()
+	handler.ServeHTTP(savedDashboardResponse, savedDashboard)
+	if !strings.Contains(savedDashboardResponse.Body.String(), "Impostazioni salvate.") {
+		t.Fatal("saved settings confirmation is missing")
 	}
 }
 

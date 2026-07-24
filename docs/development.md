@@ -18,6 +18,8 @@ docker compose up --build
 
 Configuration is documented in `.env.example`. Go does not load `.env` itself; export the variables in your shell or let an editor/task runner load them.
 
+Use `/monitor?test=1` for browser-side monitor development. The production `/monitor` deliberately hides interactive controls; supervised Windows and Raspberry Pi kiosk launchers are documented in `docs/kiosk.md`.
+
 For a new database, generate a random administration token, set it as `TURNINO_ADMIN_TOKEN`, and start Turnino once. The credential is bootstrapped only when none exists and cannot be overwritten by changing the environment variable. Keep the original token outside the repository; administration requests use it as a Bearer token.
 
 ## Translations

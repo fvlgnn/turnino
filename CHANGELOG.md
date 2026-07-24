@@ -27,6 +27,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Consistent SQLite backup, call-history CSV export and reproducible synthetic demonstration database commands.
 - Typed installation settings with an administration form, persisted defaults and validation.
 - Server-rendered Caller interface for authenticated automatic calls using a counter token stored in the operator browser.
+- Full-screen public monitor with recent calls, SSE snapshot recovery, live visual emphasis, optional browser sound and a same-browser test mode.
+- Autonomous production monitor mode and supervised kiosk launchers for Microsoft Edge on Windows and Chromium on Raspberry Pi.
+- Kiosk language, scale and restart configuration plus a documented security and troubleshooting boundary.
+
+### Fixed
+
+- Windows kiosk launcher now preserves a single Edge executable result as an array instead of treating its first character as the executable path.
 
 ## [0.1.0] - 2026-07-24
 

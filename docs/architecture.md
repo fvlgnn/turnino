@@ -15,6 +15,10 @@ operator browser -- POST call --> Go HTTP server -- transaction --> SQLite
 
 Server-rendered HTML provides the initial state. SSE carries one-way live updates; ordinary HTTP POST requests carry commands. Polling may be retained only as a compatibility fallback.
 
+The call-event endpoint sends a recent-call snapshot from SQLite whenever a monitor connects, followed by live events from an in-memory fan-out broker. The snapshot makes reconnects self-healing; the broker is only a low-latency notification mechanism and never replaces persisted state.
+
+`/monitor` is the autonomous production view: it has no interactive setup controls and relies on the browser's kiosk and autoplay policies. `/monitor?test=1` exposes sound, fullscreen and Caller controls for development only. Platform launchers supervise Edge or Chromium and restart the browser if it exits.
+
 ## Planned domain
 
 - **Queue** owns a numbering policy and its current sequence.
@@ -62,6 +66,8 @@ Each counter receives a separate random token. Counter tokens can call queues bu
 The Caller page stores its counter token in that browser's local storage. It sends the token as a Bearer credential to resolve the associated counter name and when a call is made. Revoking or rotating the counter invalidates the stored value without requiring server-side browser sessions.
 
 Bearer tokens must be used only on a trusted local network or behind HTTPS. Turnino does not attempt to make plaintext HTTP safe on an untrusted network.
+
+The location and troubleshooting boundary of network, HTTP-header, administrator, CSRF, counter-token and kiosk controls is documented in `docs/security.md`.
 
 The administration UI exchanges the administrator token for a random, twelve-hour in-memory session. Its cookie is `HttpOnly` and `SameSite=Strict`; state-changing forms also require a session-specific CSRF token. Sessions intentionally disappear when Turnino restarts.
 

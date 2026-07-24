@@ -45,6 +45,18 @@ In alternativa, impostare manualmente `queueId` e `counterToken` nell'ultima sez
 
 Per provare il flusso dal browser, registrare uno sportello nell'amministrazione, copiare il token mostrato una sola volta, aprire <http://localhost:8080/caller> e salvarlo nel browser. Il Caller conserva il token in `localStorage`; usare “Dimentica token” su postazioni condivise o prima di dismettere il browser. Rotazione e revoca rendono immediatamente inutilizzabile il valore salvato.
 
+Per studiare e provare monitor pubblico e Server-Sent Events, vedere `.maintainer/sse-monitor-guide.md`. La modalità <http://localhost:8080/monitor?test=1> permette di aprire il Caller in una seconda scheda dello stesso browser.
+
+Il monitor di produzione <http://localhost:8080/monitor> non mostra controlli. Launcher, autoplay, fullscreen, avvio al login e riavvio automatico del browser sono documentati in `docs/kiosk.md`:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\deploy\kiosk\windows\start-monitor.ps1
+```
+
+```sh
+deploy/kiosk/raspberry-pi/start-monitor.sh
+```
+
 ## Comandi utili
 
 ```sh

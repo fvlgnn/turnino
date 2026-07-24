@@ -1,0 +1,68 @@
+{{define "monitor.html"}}
+<!doctype html>
+<html lang="{{.Lang}}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>{{t .Lang "monitor.title"}} · {{.Settings.InstallationName}}</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <script src="/static/monitor.js" defer></script>
+  </head>
+  <body class="monitor-body">
+    <main
+      class="monitor-main"
+      data-limit="{{.Settings.RecentCallsLimit}}"
+      data-sound-enabled="{{.Settings.SoundEnabled}}"
+      data-highlight-ms="{{mul .Settings.HighlightDurationSeconds 1000}}"
+      data-waiting="{{t .Lang "monitor.waiting"}}"
+      data-connected="{{t .Lang "monitor.connected"}}"
+      data-reconnecting="{{t .Lang "monitor.reconnecting"}}"
+      data-enable-sound="{{t .Lang "monitor.enable_sound"}}"
+      data-sound-ready="{{t .Lang "monitor.sound_ready"}}"
+      data-fullscreen="{{t .Lang "monitor.fullscreen"}}"
+      data-exit-fullscreen="{{t .Lang "monitor.exit_fullscreen"}}">
+      <header class="monitor-header">
+        <div>
+          <p class="eyebrow">{{t .Lang "monitor.title"}}</p>
+          <h1>{{.Settings.InstallationName}}</h1>
+        </div>
+        <div class="monitor-controls">
+          <span id="monitor-connection" class="monitor-connection{{if not .TestMode}} compact{{end}}" role="status" aria-live="polite">{{t .Lang "monitor.reconnecting"}}</span>
+          {{if .TestMode}}
+          {{if .Settings.SoundEnabled}}<button id="monitor-sound" class="monitor-control" type="button">{{t .Lang "monitor.enable_sound"}}</button>{{end}}
+          <button id="monitor-fullscreen" class="monitor-control" type="button" aria-pressed="false">{{t .Lang "monitor.fullscreen"}}</button>
+          <a class="monitor-control test-link" href="/caller" target="_blank" rel="noopener">{{t .Lang "monitor.open_caller"}}</a>
+          {{end}}
+        </div>
+      </header>
+
+      <section id="monitor-empty" class="monitor-empty"{{if .Calls}} hidden{{end}}>
+        <p>{{t .Lang "monitor.waiting"}}</p>
+      </section>
+
+      <section id="monitor-latest" class="monitor-latest"{{if not .Calls}} hidden{{end}}>
+        {{range $index, $call := .Calls}}{{if eq $index 0}}
+        <p id="monitor-latest-queue" class="monitor-latest-queue">{{$call.QueueName}}</p>
+        <p id="monitor-latest-number" class="monitor-latest-number">{{$call.Number}}</p>
+        <p class="monitor-latest-counter"><span>{{t $.Lang "monitor.go_to"}}</span> <strong id="monitor-latest-counter">{{$call.CounterName}}</strong></p>
+        {{end}}{{end}}
+      </section>
+
+      <section id="monitor-history-section" class="monitor-history-section"{{if not .Calls}} hidden{{end}}>
+        <h2>{{t .Lang "monitor.recent_calls"}}</h2>
+        <ol id="monitor-history" class="monitor-history">
+          {{range .Calls}}
+          <li data-call-id="{{.ID}}">
+            <strong class="history-number">{{.Number}}</strong>
+            <span class="history-counter">{{.CounterName}}</span>
+            <span class="history-queue">{{.QueueName}}</span>
+            <time datetime="{{.CalledAt.Format "2006-01-02T15:04:05Z"}}">{{.CalledAt.Format "15:04"}}</time>
+          </li>
+          {{end}}
+        </ol>
+      </section>
+    </main>
+  </body>
+</html>
+{{end}}

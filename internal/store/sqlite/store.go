@@ -433,6 +433,71 @@ func (s *Store) ListCallRecords(ctx context.Context) ([]domain.CallRecord, error
 	return records, nil
 }
 
+func (s *Store) ListRecentCallRecords(ctx context.Context, limit int) ([]domain.CallRecord, error) {
+	if limit < 1 || limit > 100 {
+		return nil, errors.New("recent calls limit must be between 1 and 100")
+	}
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT calls.id, calls.queue_id, calls.counter_id, calls.number,
+		       calls.sequence_value, calls.kind, calls.called_at,
+		       queues.name, counters.name
+		FROM calls
+		JOIN queues ON queues.id = calls.queue_id
+		JOIN counters ON counters.id = calls.counter_id
+		ORDER BY calls.id DESC
+		LIMIT ?`, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list recent call records: %w", err)
+	}
+	defer rows.Close()
+	records := make([]domain.CallRecord, 0, limit)
+	for rows.Next() {
+		record, err := scanCallRecord(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan recent call record: %w", err)
+		}
+		records = append(records, record)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate recent call records: %w", err)
+	}
+	return records, nil
+}
+
+func (s *Store) CallRecord(ctx context.Context, callID int64) (domain.CallRecord, error) {
+	row := s.db.QueryRowContext(ctx, `
+		SELECT calls.id, calls.queue_id, calls.counter_id, calls.number,
+		       calls.sequence_value, calls.kind, calls.called_at,
+		       queues.name, counters.name
+		FROM calls
+		JOIN queues ON queues.id = calls.queue_id
+		JOIN counters ON counters.id = calls.counter_id
+		WHERE calls.id = ?`, callID)
+	record, err := scanCallRecord(row)
+	if err != nil {
+		return domain.CallRecord{}, fmt.Errorf("get call record: %w", err)
+	}
+	return record, nil
+}
+
+type rowScanner interface {
+	Scan(...any) error
+}
+
+func scanCallRecord(row rowScanner) (domain.CallRecord, error) {
+	var record domain.CallRecord
+	var calledAt int64
+	if err := row.Scan(
+		&record.ID, &record.QueueID, &record.CounterID, &record.Number,
+		&record.SequenceValue, &record.Kind, &calledAt,
+		&record.QueueName, &record.CounterName,
+	); err != nil {
+		return domain.CallRecord{}, err
+	}
+	record.CalledAt = time.Unix(calledAt, 0).UTC()
+	return record, nil
+}
+
 func (s *Store) migrate(ctx context.Context) error {
 	if _, err := s.db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS schema_migrations (

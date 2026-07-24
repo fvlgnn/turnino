@@ -20,8 +20,9 @@
 - [ ] Validated custom-number calls from the operator page
 - [ ] Repeat the last call without advancing the queue
 - [ ] Counter page for the operator and dedicated counter display
-- [ ] Full-screen public monitor with recent calls, visual emphasis and an audible cue
-- [ ] SSE updates with reconnect and a conservative polling fallback
+- [x] Full-screen public monitor with recent calls, visual emphasis and an audible cue
+- [x] SSE updates with automatic browser reconnect and snapshot recovery
+- [ ] Conservative polling fallback for browsers without SSE support
 - [x] Essential administration with browser login, protected forms and offline credential recovery
 - [x] English and Italian UI using embedded JSON dictionaries, with English as the fallback language
 - [x] Consistent SQLite backup and call-history export

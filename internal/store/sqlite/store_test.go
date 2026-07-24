@@ -140,6 +140,27 @@ func TestCallNextWrapsQueueRange(t *testing.T) {
 	}
 }
 
+func TestListRecentCallRecordsReturnsNewestFirst(t *testing.T) {
+	store, queue, tokenHash := testStore(t, 1, 9)
+	ctx := context.Background()
+	for range 3 {
+		if _, err := store.CallNext(ctx, queue.ID, tokenHash); err != nil {
+			t.Fatalf("CallNext() error = %v", err)
+		}
+	}
+
+	records, err := store.ListRecentCallRecords(ctx, 2)
+	if err != nil {
+		t.Fatalf("ListRecentCallRecords() error = %v", err)
+	}
+	if len(records) != 2 || records[0].Number != "A03" || records[1].Number != "A02" {
+		t.Fatalf("recent records = %#v", records)
+	}
+	if records[0].QueueName != "General" || records[0].CounterName != "Counter 1" {
+		t.Fatalf("enriched recent record = %#v", records[0])
+	}
+}
+
 func TestCallNextRollsBackForUnavailableCounter(t *testing.T) {
 	store, queue, tokenHash := testStore(t, 0, 9)
 	ctx := context.Background()

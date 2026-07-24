@@ -36,6 +36,7 @@ type Store interface {
 	RevokeCounter(context.Context, int64) error
 	RotateCounterToken(context.Context, int64, []byte) error
 	ReactivateCounter(context.Context, int64, []byte) error
+	ListRecentCallRecords(context.Context, int) ([]domain.CallRecord, error)
 }
 
 type app struct {
@@ -62,9 +63,12 @@ type pageData struct {
 	AdminConfigured bool
 	CSRFToken       string
 	Error           string
+	Notice          string
 	Queues          []domain.Queue
 	Counters        []domain.Counter
 	Settings        domain.Settings
+	Calls           []domain.CallRecord
+	TestMode        bool
 	NewCounterToken string
 }
 
@@ -73,7 +77,10 @@ func New(version string, store Store) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	tmpl, err := template.New("").Funcs(template.FuncMap{"t": catalog.text}).ParseFS(files, "templates/*.html")
+	tmpl, err := template.New("").Funcs(template.FuncMap{
+		"t":   catalog.text,
+		"mul": func(left, right int) int { return left * right },
+	}).ParseFS(files, "templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("parse templates: %w", err)
 	}
@@ -95,6 +102,7 @@ func New(version string, store Store) (http.Handler, error) {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticFiles)))
 	mux.HandleFunc("GET /", application.home)
 	mux.HandleFunc("GET /caller", application.caller)
+	mux.HandleFunc("GET /monitor", application.monitor)
 	mux.HandleFunc("GET /admin", application.admin)
 	mux.HandleFunc("POST /admin/login", application.login)
 	mux.HandleFunc("POST /admin/logout", application.logout)
@@ -125,6 +133,19 @@ func (a *app) caller(w http.ResponseWriter, r *http.Request) {
 	data := a.page(r)
 	data.Queues = queues
 	a.render(w, "caller.html", data)
+}
+
+func (a *app) monitor(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	data := a.page(r)
+	calls, err := a.store.ListRecentCallRecords(r.Context(), data.Settings.RecentCallsLimit)
+	if err != nil {
+		http.Error(w, "Could not load recent calls", http.StatusInternalServerError)
+		return
+	}
+	data.Calls = calls
+	data.TestMode = r.URL.Query().Get("test") == "1"
+	a.render(w, "monitor.html", data)
 }
 
 func (a *app) admin(w http.ResponseWriter, r *http.Request) {
@@ -215,7 +236,7 @@ func (a *app) updateSettings(w http.ResponseWriter, r *http.Request) {
 		a.redirectAdminError(w, r, err.Error())
 		return
 	}
-	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+	http.Redirect(w, r, "/admin?notice=settings-saved", http.StatusSeeOther)
 }
 
 func (a *app) createQueue(w http.ResponseWriter, r *http.Request) {
@@ -338,6 +359,9 @@ func (a *app) renderDashboard(w http.ResponseWriter, r *http.Request, current se
 	data := a.page(r)
 	data.CSRFToken = current.CSRFToken
 	data.Error = r.URL.Query().Get("error")
+	if r.URL.Query().Get("notice") == "settings-saved" {
+		data.Notice = a.catalog.text(data.Lang, "settings.saved")
+	}
 	data.Queues = queues
 	data.Counters = counters
 	data.NewCounterToken = newCounterToken

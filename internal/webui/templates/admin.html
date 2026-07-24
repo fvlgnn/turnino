@@ -27,6 +27,7 @@
         <h1 class="page-title">{{t .Lang "admin.queue_setup"}}</h1>
       </div>
       {{if .Error}}<p class="alert error">{{.Error}}</p>{{end}}
+      {{if .Notice}}<p class="alert success" role="status">{{.Notice}}</p>{{end}}
       {{if .NewCounterToken}}
       <section class="alert secret">
         <strong>{{t .Lang "admin.secret_title"}}</strong>

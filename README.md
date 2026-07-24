@@ -32,6 +32,7 @@ The public server starts without configuration. To bootstrap the administration 
 Open <http://localhost:8080>. The health endpoint is available at <http://localhost:8080/healthz>.
 The administration interface is available at <http://localhost:8080/admin> after the administrator credential has been bootstrapped.
 The operator interface is available at <http://localhost:8080/caller>. Paste the token issued when its counter was registered; the token remains in that browser and authenticates calls to the existing API.
+The autonomous live public monitor is available at <http://localhost:8080/monitor>. During development, open `/monitor?test=1` to expose sound/fullscreen controls and launch a Caller tab from the same browser. See the [kiosk deployment guide](docs/kiosk.md) for Windows Edge and Raspberry Pi Chromium autostart.
 
 With Docker:
 
@@ -57,7 +58,7 @@ Turnino combines the English word “turn” with the Italian diminutive suffix 
 
 ## Project status
 
-See the [roadmap](docs/roadmap.md), [architecture](docs/architecture.md), [development guide](docs/development.md), and [troubleshooting guide](docs/troubleshooting.md). Italian project notes are available in [docs/it/README.md](docs/it/README.md).
+See the [roadmap](docs/roadmap.md), [architecture](docs/architecture.md), [development guide](docs/development.md), [kiosk deployment guide](docs/kiosk.md), [security model](docs/security.md), and [troubleshooting guide](docs/troubleshooting.md). Italian project notes are available in [docs/it/README.md](docs/it/README.md).
 
 ## License
 
