@@ -79,6 +79,7 @@ The following resources are intentionally public because they display waiting-ro
 
 - `/monitor`;
 - `/counter-display` (a browser-local public counter ID selects the display, while call events remain public);
+- `/about` (public project, license and source information);
 - `/api/v1/events/calls`;
 - the home page and static assets;
 - `/healthz`.

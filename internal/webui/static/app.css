@@ -88,6 +88,13 @@ h1 {
   margin: 0;
 }
 
+.topbar-link {
+  color: #607268;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .brand {
   min-width: 0;
   overflow: hidden;
@@ -200,6 +207,7 @@ button.danger {
 
 .home-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
 }
@@ -212,6 +220,48 @@ button.danger {
   color: #fff;
   font-weight: 750;
   text-decoration: none;
+}
+
+.about-main {
+  width: min(48rem, calc(100% - 3rem));
+  margin: 2.5rem auto;
+}
+
+.about-details {
+  display: grid;
+  gap: 0;
+  margin-block: 2rem;
+}
+
+.about-details div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+  gap: 1rem;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid #e0e8e3;
+}
+
+.about-details div:last-child {
+  border-bottom: 0;
+}
+
+.about-details dt {
+  color: #607268;
+  font-weight: 750;
+}
+
+.about-details dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.about-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
 .compact-button {
@@ -776,6 +826,11 @@ th {
     grid-template-columns: 1fr;
   }
 
+  .about-details div {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
   .monitor-main {
     height: auto;
     min-height: 100dvh;
@@ -844,7 +899,8 @@ th {
 
   .caller-queue-heading,
   .caller-custom,
-  .caller-token {
+  .caller-token,
+  .about-details div {
     border-color: #33463b;
   }
 

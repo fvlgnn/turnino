@@ -1,0 +1,35 @@
+{{define "about.html"}}
+<!doctype html>
+<html lang="{{.Lang}}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>{{t .Lang "about.title"}} · {{.Settings.InstallationName}}</title>
+    <link rel="stylesheet" href="/static/app.css">
+  </head>
+  <body class="admin-body">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="/">{{.Settings.InstallationName}}</a>
+        <nav class="language-switch" aria-label="{{t .Lang "common.language"}}"><a href="?lang=en">{{t .Lang "common.english"}}</a><a href="?lang=it">{{t .Lang "common.italian"}}</a></nav>
+      </div>
+    </header>
+    <main class="about-main">
+      <p class="eyebrow">Turnino</p>
+      <h1 class="page-title">{{t .Lang "about.title"}}</h1>
+      <p class="lead">{{t .Lang "about.description"}}</p>
+
+      <dl class="about-details panel">
+        <div><dt>{{t .Lang "common.version"}}</dt><dd>{{.Version}}</dd></div>
+        <div><dt>{{t .Lang "about.license"}}</dt><dd><a href="{{.SourceURL}}/blob/main/LICENSE" rel="external">GNU AGPL-3.0-only</a></dd></div>
+        <div><dt>{{t .Lang "about.copyright"}}</dt><dd>Copyright (c) 2026-present Gianni Favilli (fvlgnn)</dd></div>
+        <div><dt>{{t .Lang "about.notices"}}</dt><dd><a href="{{.SourceURL}}/blob/main/NOTICE" rel="external">NOTICE</a></dd></div>
+      </dl>
+
+      <p>{{t .Lang "about.source_notice"}}</p>
+      <p class="about-actions"><a class="button-link" href="{{.SourceURL}}" rel="external">{{t .Lang "about.source"}}</a></p>
+    </main>
+  </body>
+</html>
+{{end}}

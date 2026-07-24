@@ -33,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Dedicated SSE counter display with automatic same-browser discovery, administration pairing links and Windows/Raspberry Pi kiosk launchers.
 - Opt-in custom-number calls for manual paper dispensers, with range validation and atomic queue synchronization.
 - Last-call repeat operations that emit a fresh SSE notification without advancing the queue.
+- Localized About / Source page with version, copyright, AGPL license and repository links.
 
 ### Fixed
 

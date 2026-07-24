@@ -13,7 +13,10 @@
     <header class="topbar">
       <div class="topbar-inner">
         <a class="brand" href="/">{{.Settings.InstallationName}}</a>
-        <nav class="language-switch" aria-label="{{t .Lang "common.language"}}"><a href="?lang=en">{{t .Lang "common.english"}}</a><a href="?lang=it">{{t .Lang "common.italian"}}</a></nav>
+        <div class="topbar-actions">
+          <a class="topbar-link" href="/about">{{t .Lang "about.link"}}</a>
+          <nav class="language-switch" aria-label="{{t .Lang "common.language"}}"><a href="?lang=en">{{t .Lang "common.english"}}</a><a href="?lang=it">{{t .Lang "common.italian"}}</a></nav>
+        </div>
       </div>
     </header>
     <main

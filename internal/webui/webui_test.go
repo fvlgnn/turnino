@@ -28,6 +28,30 @@ func TestHomePage(t *testing.T) {
 		"Your turn, made simple.",
 		"Call the next number. Keep every counter, display, and waiting room in sync.",
 		`href="/caller"`,
+		`href="/about"`,
+		"test-version",
+	} {
+		if !strings.Contains(response.Body.String(), expected) {
+			t.Errorf("response does not contain %q", expected)
+		}
+	}
+}
+
+func TestAboutPageOffersLicenseAndSource(t *testing.T) {
+	handler, _ := testHandler(t)
+	request := httptest.NewRequest(http.MethodGet, "/about", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	for _, expected := range []string{
+		"About Turnino",
+		"GNU AGPL-3.0-only",
+		"Copyright (c) 2026-present Gianni Favilli (fvlgnn)",
+		`href="https://github.com/fvlgnn/turnino"`,
+		`href="https://github.com/fvlgnn/turnino/blob/main/LICENSE"`,
+		`href="https://github.com/fvlgnn/turnino/blob/main/NOTICE"`,
 		"test-version",
 	} {
 		if !strings.Contains(response.Body.String(), expected) {

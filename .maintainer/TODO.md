@@ -4,7 +4,7 @@
 
 - [x] Inizializzare/pubblicare il repository sotto `github.com/fvlgnn`.
 - [x] Controllare che database, file locali e segreti non siano tracciati.
-- [ ] Aggiungere una pagina `About / Source` visibile nell'interfaccia per AGPL-3.0.
+- [x] Aggiungere una pagina `About / Source` visibile nell'interfaccia per AGPL-3.0.
 - [x] Definire copyright e contatto di sicurezza pubblici.
 - [x] Proteggere `main` e richiedere CI verde per le pull request.
 - [ ] Rendere pubblico il package GHCR dopo la prima pubblicazione.
@@ -25,7 +25,6 @@
 - [x] Creare il monitor pubblico a tutto schermo con lista delle chiamate recenti, segnale acustico ed evidenziazione visiva delle nuove chiamate.
 - [x] Aggiusta header pagina admin (classe topbar tutto sezioni attaccate)
 - [x] Implementare aggiornamenti SSE con riconnessione e recupero tramite snapshot.
-- [ ] Implementare fallback polling per browser senza supporto SSE.
 - [x] Implementare amministrazione essenziale.
 - [x] Aggiungere localizzazione italiana e inglese.
 - [x] Implementare backup SQLite consistente ed export CSV dello storico chiamate.
@@ -33,7 +32,6 @@
 - [x] Aggiungere test del dominio, HTTP, persistenza e concorrenza.
 - [x] Documentare installazione e sviluppo nativi e con Docker.
 - [x] Documentare monitor kiosk e avvio automatico del browser per Windows e Raspberry Pi.
-- [ ] IDEA Vedi se possibile migliorare facilità di gestione caller (per registrazione, in una situazione reale potrebbe essere complicato registrare con token lo sportello)
 - [x] Monitor pubblico con lista (font dei numeri progressivamente più piccolo).
 - [x] Gestire audio autonomo tramite launcher kiosk, mantenendo il pulsante come fallback nella modalità test.
 
@@ -52,3 +50,8 @@
 - [ ] Sistema automatizzato di stampa numero da totem dispenser
 - [ ] Se sistema automatizzato disattiva chiamate numeri manuali
 - [ ] Setting per temi, logo, banner, volume dettagliato e altre personalizzazioni.
+
+## Da valutare
+
+- [ ] Vedi se possibile migliorare facilità di gestione caller (per registrazione, in una situazione reale potrebbe essere complicato registrare con token lo sportello)
+- [ ] Valutare un fallback polling solo se emerge la necessità di supportare browser senza `EventSource`; SSE resta il trasporto principale.

@@ -24,6 +24,8 @@ import (
 //go:embed templates/*.html static/* translations/*.json
 var files embed.FS
 
+const projectSourceURL = "https://github.com/fvlgnn/turnino"
+
 type Store interface {
 	AdminConfigured(context.Context) (bool, error)
 	ValidateAdminToken(context.Context, []byte) (bool, error)
@@ -72,6 +74,7 @@ type pageData struct {
 	TestMode        bool
 	NewCounterToken string
 	DisplayCounter  domain.Counter
+	SourceURL       string
 }
 
 func New(version string, store Store) (http.Handler, error) {
@@ -103,6 +106,7 @@ func New(version string, store Store) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticFiles)))
 	mux.HandleFunc("GET /", application.home)
+	mux.HandleFunc("GET /about", application.about)
 	mux.HandleFunc("GET /caller", application.caller)
 	mux.HandleFunc("GET /counter-display", application.counterDisplay)
 	mux.HandleFunc("GET /monitor", application.monitor)
@@ -125,6 +129,10 @@ func (a *app) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.render(w, "index.html", a.page(r))
+}
+
+func (a *app) about(w http.ResponseWriter, r *http.Request) {
+	a.render(w, "about.html", a.page(r))
 }
 
 func (a *app) caller(w http.ResponseWriter, r *http.Request) {
@@ -438,9 +446,10 @@ func (a *app) page(r *http.Request) pageData {
 		settings = stored
 	}
 	return pageData{
-		Version:  a.version,
-		Lang:     a.language(r, settings.DefaultLanguage),
-		Settings: settings,
+		Version:   a.version,
+		Lang:      a.language(r, settings.DefaultLanguage),
+		Settings:  settings,
+		SourceURL: projectSourceURL,
 	}
 }
 

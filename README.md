@@ -2,11 +2,11 @@
 
 > **Your turn, made simple.**
 
-Tiny self-hosted queue calling and display system. Built with Go, SQLite and Server-Sent Events; designed for Raspberry Pi and Docker.
+A lightweight, open-source, self-hosted queue calling and display system. Built with Go, SQLite and Server-Sent Events. Designed for Raspberry Pi and Docker.
 
 Turnino is the modern rewrite of a queue display system that has run for years on modest hardware, including Raspberry Pi. It keeps the original idea: one server, a browser for each operator, a public monitor, optional counter displays, and a small administration page.
 
-The project is in active alpha development. The HTTP foundation, delivery pipeline and SQLite persistence layer are present; the operator and display workflows are being built toward v0.1.0.
+The project is in active alpha development. The Phase 1 operator, administration and live-display workflows are complete and are being consolidated toward the first public v0.1.0 release.
 
 ## Principles
 
@@ -30,6 +30,7 @@ make dev
 The public server starts without configuration. To bootstrap the administration API on a new database, set a random `TURNINO_ADMIN_TOKEN` of at least 20 characters for the first startup; Turnino persists only its SHA-256 hash. See `.env.example` and the development guide for configuration details.
 
 Open <http://localhost:8080>. The health endpoint is available at <http://localhost:8080/healthz>.
+Project, license and source information is available at <http://localhost:8080/about>.
 The administration interface is available at <http://localhost:8080/admin> after the administrator credential has been bootstrapped.
 The operator interface is available at <http://localhost:8080/caller>. Paste the token issued when its counter was registered; the token remains in that browser and authenticates automatic calls and recalls. Queues backed by a separate manual paper dispenser can explicitly enable validated custom-number calls from the administration page.
 The dedicated counter display is available at <http://localhost:8080/counter-display>. Open it from the Caller to reuse the counter token saved in the same browser; it then shows only calls made by that counter.
