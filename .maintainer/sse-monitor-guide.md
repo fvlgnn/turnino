@@ -20,7 +20,7 @@ Il monitor è pubblico e non usa token. Può leggere chiamate e sportelli già d
 ```text
 Caller
   |
-  | POST /api/v1/queues/{id}/calls/next
+  | POST /api/v1/queues/{id}/calls/{next|custom|recall}
   | Authorization: Bearer <counter token>
   v
 HTTP API

@@ -9,20 +9,24 @@ import (
 )
 
 var (
-	ErrQueueNotFound      = errors.New("queue not found")
-	ErrCounterNotFound    = errors.New("counter not found")
-	ErrCounterUnavailable = errors.New("counter not found or disabled")
+	ErrQueueNotFound       = errors.New("queue not found")
+	ErrCounterNotFound     = errors.New("counter not found")
+	ErrCounterUnavailable  = errors.New("counter not found or disabled")
+	ErrCustomCallsDisabled = errors.New("custom calls are disabled for this queue")
+	ErrSequenceOutOfRange  = errors.New("number is outside the queue range")
+	ErrNoPreviousCall      = errors.New("no previous call for this queue and counter")
 )
 
 type Queue struct {
-	ID           int64
-	Name         string
-	Prefix       string
-	Digits       int
-	MinValue     int
-	MaxValue     int
-	CurrentValue int
-	CreatedAt    time.Time
+	ID               int64
+	Name             string
+	Prefix           string
+	Digits           int
+	MinValue         int
+	MaxValue         int
+	CurrentValue     int
+	AllowCustomCalls bool
+	CreatedAt        time.Time
 }
 
 type Counter struct {
@@ -93,11 +97,12 @@ func (s *Settings) NormalizeAndValidate() error {
 }
 
 type CreateQueueParams struct {
-	Name     string
-	Prefix   string
-	Digits   int
-	MinValue int
-	MaxValue int
+	Name             string
+	Prefix           string
+	Digits           int
+	MinValue         int
+	MaxValue         int
+	AllowCustomCalls bool
 }
 
 var prefixPattern = regexp.MustCompile(`^[A-Z]{0,3}$`)

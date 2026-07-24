@@ -28,6 +28,8 @@ The call-event endpoint sends a recent-call snapshot from SQLite whenever a moni
 - **Call** records a number shown at a counter and whether it was automatic, manual, or recalled.
 - **Settings** is a singleton containing the installation name, default language and the small set of public-monitor preferences shared by every browser.
 
+A queue enables custom calls only when it must follow a separate manual paper dispenser. A custom call validates the requested sequence and atomically moves the queue to it. A recall creates a new call event from the latest call for the same queue and counter, but deliberately leaves the queue sequence unchanged.
+
 Number allocation and call creation must occur in one database transaction. A counter's online presence is ephemeral, while its identity and call history are persistent.
 
 ## Technology decisions

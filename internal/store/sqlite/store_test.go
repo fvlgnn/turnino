@@ -34,8 +34,8 @@ func TestOpenAppliesMigrationsOnce(t *testing.T) {
 	if err := store.db.QueryRowContext(ctx, "SELECT count(*) FROM schema_migrations").Scan(&migrations); err != nil {
 		t.Fatalf("count migrations: %v", err)
 	}
-	if migrations != 3 {
-		t.Fatalf("migration count = %d, want 3", migrations)
+	if migrations != 4 {
+		t.Fatalf("migration count = %d, want 4", migrations)
 	}
 }
 
@@ -137,6 +137,73 @@ func TestCallNextWrapsQueueRange(t *testing.T) {
 		if call.Number != expected {
 			t.Fatalf("CallNext() #%d number = %q, want %q", i+1, call.Number, expected)
 		}
+	}
+}
+
+func TestCallCustomSynchronizesQueueWhenEnabled(t *testing.T) {
+	store, queue, tokenHash := testStore(t, 0, 99)
+	ctx := context.Background()
+	if err := store.SetQueueCustomCalls(ctx, queue.ID, true); err != nil {
+		t.Fatalf("SetQueueCustomCalls() error = %v", err)
+	}
+
+	call, err := store.CallCustom(ctx, queue.ID, 37, tokenHash)
+	if err != nil {
+		t.Fatalf("CallCustom() error = %v", err)
+	}
+	if call.Number != "A37" || call.SequenceValue != 37 || call.Kind != domain.CallKindManual {
+		t.Fatalf("custom call = %#v", call)
+	}
+	next, err := store.CallNext(ctx, queue.ID, tokenHash)
+	if err != nil {
+		t.Fatalf("CallNext() after custom call error = %v", err)
+	}
+	if next.Number != "A38" {
+		t.Fatalf("next number = %q, want A38", next.Number)
+	}
+}
+
+func TestCallCustomRequiresEnablementAndValidRange(t *testing.T) {
+	store, queue, tokenHash := testStore(t, 0, 99)
+	ctx := context.Background()
+	if _, err := store.CallCustom(ctx, queue.ID, 37, tokenHash); !errors.Is(err, domain.ErrCustomCallsDisabled) {
+		t.Fatalf("disabled CallCustom() error = %v, want ErrCustomCallsDisabled", err)
+	}
+	if err := store.SetQueueCustomCalls(ctx, queue.ID, true); err != nil {
+		t.Fatalf("SetQueueCustomCalls() error = %v", err)
+	}
+	if _, err := store.CallCustom(ctx, queue.ID, 100, tokenHash); !errors.Is(err, domain.ErrSequenceOutOfRange) {
+		t.Fatalf("out-of-range CallCustom() error = %v, want ErrSequenceOutOfRange", err)
+	}
+}
+
+func TestRecallLastRepeatsWithoutAdvancingQueue(t *testing.T) {
+	store, queue, tokenHash := testStore(t, 0, 99)
+	ctx := context.Background()
+	first, err := store.CallNext(ctx, queue.ID, tokenHash)
+	if err != nil {
+		t.Fatalf("CallNext() error = %v", err)
+	}
+	recalled, err := store.RecallLast(ctx, queue.ID, tokenHash)
+	if err != nil {
+		t.Fatalf("RecallLast() error = %v", err)
+	}
+	if recalled.Number != first.Number || recalled.SequenceValue != first.SequenceValue || recalled.Kind != domain.CallKindRecall {
+		t.Fatalf("recalled call = %#v, first = %#v", recalled, first)
+	}
+	next, err := store.CallNext(ctx, queue.ID, tokenHash)
+	if err != nil {
+		t.Fatalf("CallNext() after recall error = %v", err)
+	}
+	if next.SequenceValue != first.SequenceValue+1 {
+		t.Fatalf("sequence after recall = %d, want %d", next.SequenceValue, first.SequenceValue+1)
+	}
+}
+
+func TestRecallLastRequiresPreviousCallForSameCounterAndQueue(t *testing.T) {
+	store, queue, tokenHash := testStore(t, 0, 99)
+	if _, err := store.RecallLast(context.Background(), queue.ID, tokenHash); !errors.Is(err, domain.ErrNoPreviousCall) {
+		t.Fatalf("RecallLast() error = %v, want ErrNoPreviousCall", err)
 	}
 }
 

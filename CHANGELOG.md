@@ -31,6 +31,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Autonomous production monitor mode and supervised kiosk launchers for Microsoft Edge on Windows and Chromium on Raspberry Pi.
 - Kiosk language, scale and restart configuration plus a documented security and troubleshooting boundary.
 - Dedicated SSE counter display with automatic same-browser discovery, administration pairing links and Windows/Raspberry Pi kiosk launchers.
+- Opt-in custom-number calls for manual paper dispensers, with range validation and atomic queue synchronization.
+- Last-call repeat operations that emit a fresh SSE notification without advancing the queue.
 
 ### Fixed
 

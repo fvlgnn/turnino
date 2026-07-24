@@ -9,6 +9,8 @@
   const tokenSettings = document.querySelector("#caller-token-settings");
   const status = document.querySelector("#caller-status");
   const callButtons = [...document.querySelectorAll(".caller-next")];
+  const recallButtons = [...document.querySelectorAll(".caller-recall")];
+  const customForms = [...document.querySelectorAll(".caller-custom-form")];
 
   if (!page || !tokenForm || !tokenInput || !identity || !tokenSettings || !status) {
     return;
@@ -35,7 +37,7 @@
     }
   };
   const setCalling = (calling) => {
-    callButtons.forEach((button) => {
+    [...callButtons, ...recallButtons, ...customForms.map((form) => form.querySelector("button"))].forEach((button) => {
       button.disabled = calling;
     });
   };
@@ -99,49 +101,94 @@
     });
   });
 
+  const performCall = async (queueElement, endpoint, options = {}) => {
+    const token = storedToken();
+    if (!token) {
+      setStatus(message("missingToken"), "error");
+      tokenSettings.open = true;
+      tokenInput.focus();
+      return null;
+    }
+
+    setCalling(true);
+    setStatus(message("calling"));
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          ...(options.body ? {"Content-Type": "application/json"} : {}),
+        },
+        ...(options.body ? {body: JSON.stringify(options.body)} : {}),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (response.status === 401) {
+          clearIdentity();
+          tokenSettings.open = true;
+        }
+        setStatus(
+          response.status === 401
+            ? message("invalidToken")
+            : options.recall && response.status === 404
+              ? message("noPreviousCall")
+              : options.custom && response.status === 409
+                ? message("customDisabled")
+                : options.custom && response.status === 400
+                  ? message("customInvalid")
+              : result.error || message("callFailed"),
+          "error",
+        );
+        return null;
+      }
+      const currentNumber = queueElement.querySelector("[data-current-number]");
+      const queueName = queueElement.querySelector("h3")?.textContent.trim() || "";
+      if (currentNumber && !options.recall) {
+        currentNumber.textContent = result.number;
+      }
+      const prefix = options.recall ? message("recalledPrefix") : message("calledPrefix");
+      setStatus(`${prefix} ${result.number} ${message("calledOn")} ${queueName}`, "success");
+      return result;
+    } catch {
+      setStatus(message("callFailed"), "error");
+      return null;
+    } finally {
+      setCalling(false);
+    }
+  };
+
   callButtons.forEach((button) => {
-    button.addEventListener("click", async () => {
-      const token = storedToken();
-      if (!token) {
-        setStatus(message("missingToken"), "error");
-        tokenSettings.open = true;
-        tokenInput.focus();
+    button.addEventListener("click", () => {
+      const queueElement = button.closest(".caller-queue");
+      if (queueElement) {
+        void performCall(queueElement, `/api/v1/queues/${button.dataset.queueId}/calls/next`);
+      }
+    });
+  });
+
+  recallButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const queueElement = button.closest(".caller-queue");
+      if (queueElement) {
+        void performCall(queueElement, `/api/v1/queues/${button.dataset.queueId}/calls/recall`, {recall: true});
+      }
+    });
+  });
+
+  customForms.forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const queueElement = form.closest(".caller-queue");
+      const input = form.elements.sequence_value;
+      if (!queueElement || !input || !input.reportValidity()) {
         return;
       }
-
-      setCalling(true);
-      setStatus(message("calling"));
-      try {
-        const response = await fetch(`/api/v1/queues/${button.dataset.queueId}/calls/next`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const result = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          if (response.status === 401) {
-            clearIdentity();
-            tokenSettings.open = true;
-          }
-          setStatus(
-            response.status === 401 ? message("invalidToken") : result.error || message("callFailed"),
-            "error",
-          );
-          return;
-        }
-        const currentNumber = button.closest(".caller-queue")?.querySelector("[data-current-number]");
-        const queueName = button.closest(".caller-queue")?.querySelector("h3")?.textContent.trim() || "";
-        if (currentNumber) {
-          currentNumber.textContent = result.number;
-        }
-        setStatus(`${message("calledPrefix")} ${result.number} ${message("calledOn")} ${queueName}`, "success");
-      } catch {
-        setStatus(message("callFailed"), "error");
-      } finally {
-        setCalling(false);
-      }
+      void performCall(
+        queueElement,
+        `/api/v1/queues/${form.dataset.queueId}/calls/custom`,
+        {body: {sequence_value: Number.parseInt(input.value, 10)}, custom: true},
+      );
     });
   });
 })();

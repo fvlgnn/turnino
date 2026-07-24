@@ -26,6 +26,8 @@ type Store interface {
 	RotateCounterToken(context.Context, int64, []byte) error
 	ReactivateCounter(context.Context, int64, []byte) error
 	CallNext(context.Context, int64, []byte) (domain.Call, error)
+	CallCustom(context.Context, int64, int, []byte) (domain.Call, error)
+	RecallLast(context.Context, int64, []byte) (domain.Call, error)
 	CallRecord(context.Context, int64) (domain.CallRecord, error)
 	ListRecentCallRecords(context.Context, int) ([]domain.CallRecord, error)
 	GetSettings(context.Context) (domain.Settings, error)
@@ -47,16 +49,19 @@ func New(store Store) http.Handler {
 	mux.HandleFunc("GET /counters/me", api.currentCounter)
 	mux.HandleFunc("GET /events/calls", api.callEvents)
 	mux.HandleFunc("POST /queues/{queueID}/calls/next", api.callNext)
+	mux.HandleFunc("POST /queues/{queueID}/calls/custom", api.callCustom)
+	mux.HandleFunc("POST /queues/{queueID}/calls/recall", api.recallLast)
 	return mux
 }
 
 func (a *API) createQueue(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Name     string `json:"name"`
-		Prefix   string `json:"prefix"`
-		Digits   int    `json:"digits"`
-		MinValue int    `json:"min_value"`
-		MaxValue int    `json:"max_value"`
+		Name             string `json:"name"`
+		Prefix           string `json:"prefix"`
+		Digits           int    `json:"digits"`
+		MinValue         int    `json:"min_value"`
+		MaxValue         int    `json:"max_value"`
+		AllowCustomCalls bool   `json:"allow_custom_calls"`
 	}
 	if !decodeJSON(w, r, &input) {
 		return
@@ -193,15 +198,87 @@ func (a *API) callNext(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not call next number")
 		return
 	}
+	a.publishCall(call.ID)
+	writeJSON(w, http.StatusCreated, callResponse(call))
+}
+
+func (a *API) callCustom(w http.ResponseWriter, r *http.Request) {
+	queueID, err := parseID(r.PathValue("queueID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid queue id")
+		return
+	}
+	var input struct {
+		SequenceValue int `json:"sequence_value"`
+	}
+	if !decodeJSON(w, r, &input) {
+		return
+	}
+	token, ok := bearerToken(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "missing bearer token")
+		return
+	}
+	tokenHash := credential.Hash(token)
+	call, err := a.store.CallCustom(r.Context(), queueID, input.SequenceValue, tokenHash[:])
+	switch {
+	case errors.Is(err, domain.ErrQueueNotFound):
+		writeError(w, http.StatusNotFound, err.Error())
+		return
+	case errors.Is(err, domain.ErrCounterUnavailable):
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	case errors.Is(err, domain.ErrCustomCallsDisabled):
+		writeError(w, http.StatusConflict, err.Error())
+		return
+	case errors.Is(err, domain.ErrSequenceOutOfRange):
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	case err != nil:
+		writeError(w, http.StatusInternalServerError, "could not call custom number")
+		return
+	}
+	a.publishCall(call.ID)
+	writeJSON(w, http.StatusCreated, callResponse(call))
+}
+
+func (a *API) recallLast(w http.ResponseWriter, r *http.Request) {
+	queueID, err := parseID(r.PathValue("queueID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid queue id")
+		return
+	}
+	token, ok := bearerToken(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "missing bearer token")
+		return
+	}
+	tokenHash := credential.Hash(token)
+	call, err := a.store.RecallLast(r.Context(), queueID, tokenHash[:])
+	switch {
+	case errors.Is(err, domain.ErrQueueNotFound), errors.Is(err, domain.ErrNoPreviousCall):
+		writeError(w, http.StatusNotFound, err.Error())
+		return
+	case errors.Is(err, domain.ErrCounterUnavailable):
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	case err != nil:
+		writeError(w, http.StatusInternalServerError, "could not recall last number")
+		return
+	}
+	a.publishCall(call.ID)
+	writeJSON(w, http.StatusCreated, callResponse(call))
+}
+
+func (a *API) publishCall(callID int64) {
 	recordContext, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	record, err := a.store.CallRecord(recordContext, call.ID)
+	record, err := a.store.CallRecord(recordContext, callID)
 	if err != nil {
-		slog.Error("load call for live update", "call_id", call.ID, "error", err)
-	} else {
-		a.broker.Publish(record)
+		slog.Error("load call for live update", "call_id", callID, "error", err)
+		return
 	}
-	writeJSON(w, http.StatusCreated, callResponse(call))
+	a.broker.Publish(record)
 }
 
 func (a *API) callEvents(w http.ResponseWriter, r *http.Request) {
@@ -349,18 +426,23 @@ func parseID(value string) (int64, error) {
 }
 
 type queueJSON struct {
-	ID           int64  `json:"id"`
-	Name         string `json:"name"`
-	Prefix       string `json:"prefix"`
-	Digits       int    `json:"digits"`
-	MinValue     int    `json:"min_value"`
-	MaxValue     int    `json:"max_value"`
-	CurrentValue int    `json:"current_value"`
-	CreatedAt    string `json:"created_at"`
+	ID               int64  `json:"id"`
+	Name             string `json:"name"`
+	Prefix           string `json:"prefix"`
+	Digits           int    `json:"digits"`
+	MinValue         int    `json:"min_value"`
+	MaxValue         int    `json:"max_value"`
+	CurrentValue     int    `json:"current_value"`
+	AllowCustomCalls bool   `json:"allow_custom_calls"`
+	CreatedAt        string `json:"created_at"`
 }
 
 func queueResponse(queue domain.Queue) queueJSON {
-	return queueJSON{queue.ID, queue.Name, queue.Prefix, queue.Digits, queue.MinValue, queue.MaxValue, queue.CurrentValue, queue.CreatedAt.Format("2006-01-02T15:04:05Z")}
+	return queueJSON{
+		ID: queue.ID, Name: queue.Name, Prefix: queue.Prefix, Digits: queue.Digits,
+		MinValue: queue.MinValue, MaxValue: queue.MaxValue, CurrentValue: queue.CurrentValue,
+		AllowCustomCalls: queue.AllowCustomCalls, CreatedAt: queue.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
 }
 
 type counterJSON struct {

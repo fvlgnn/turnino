@@ -15,7 +15,8 @@ Authorization: Bearer {{adminToken}}
   "prefix": "A",
   "digits": 2,
   "min_value": 0,
-  "max_value": 99
+  "max_value": 99,
+  "allow_custom_calls": true
 }
 
 ### Register a counter (the token is returned only in this response)
@@ -55,18 +56,15 @@ POST {{baseUrl}}/api/v1/admin/counters/{{createCounter.response.body.$.id}}/reac
 Authorization: Bearer {{adminToken}}
 
 
-### Manual Customize ###
+### Call a custom number and synchronize the queue
+POST {{baseUrl}}/api/v1/queues/{{createQueue.response.body.$.id}}/calls/custom
+Content-Type: application/json
+Authorization: Bearer {{createCounter.response.body.$.token}}
 
-@queueId = 1
-@counterToken = hmbs60JhRuDmyYq_dg1xEVg7ZSzD_UNlh8S8D_hZXvo
+{
+  "sequence_value": 37
+}
 
-### Call the next number with manually supplied values
-POST {{baseUrl}}/api/v1/queues/{{queueId}}/calls/next
-Authorization: Bearer {{counterToken}}
-
-### Call me counter
-GET {{baseUrl}}/api/v1/counters/me
-Authorization: Bearer {{counterToken}}
-
-
-
+### Repeat the last call without advancing the queue
+POST {{baseUrl}}/api/v1/queues/{{createQueue.response.body.$.id}}/calls/recall
+Authorization: Bearer {{createCounter.response.body.$.token}}

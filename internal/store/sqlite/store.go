@@ -179,19 +179,20 @@ func (s *Store) CreateQueue(ctx context.Context, params domain.CreateQueueParams
 	}
 
 	queue := domain.Queue{
-		Name:         params.Name,
-		Prefix:       params.Prefix,
-		Digits:       params.Digits,
-		MinValue:     params.MinValue,
-		MaxValue:     params.MaxValue,
-		CurrentValue: params.MinValue - 1,
+		Name:             params.Name,
+		Prefix:           params.Prefix,
+		Digits:           params.Digits,
+		MinValue:         params.MinValue,
+		MaxValue:         params.MaxValue,
+		CurrentValue:     params.MinValue - 1,
+		AllowCustomCalls: params.AllowCustomCalls,
 	}
 	var createdAt int64
 	err := s.db.QueryRowContext(ctx, `
-		INSERT INTO queues (name, prefix, digits, min_value, max_value, current_value)
-		VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO queues (name, prefix, digits, min_value, max_value, current_value, allow_custom_calls)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
 		RETURNING id, created_at`,
-		queue.Name, queue.Prefix, queue.Digits, queue.MinValue, queue.MaxValue, queue.CurrentValue,
+		queue.Name, queue.Prefix, queue.Digits, queue.MinValue, queue.MaxValue, queue.CurrentValue, queue.AllowCustomCalls,
 	).Scan(&queue.ID, &createdAt)
 	if err != nil {
 		return domain.Queue{}, fmt.Errorf("create queue: %w", err)
@@ -202,7 +203,7 @@ func (s *Store) CreateQueue(ctx context.Context, params domain.CreateQueueParams
 
 func (s *Store) ListQueues(ctx context.Context) ([]domain.Queue, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, name, prefix, digits, min_value, max_value, current_value, created_at
+		SELECT id, name, prefix, digits, min_value, max_value, current_value, allow_custom_calls, created_at
 		FROM queues ORDER BY name, id`)
 	if err != nil {
 		return nil, fmt.Errorf("list queues: %w", err)
@@ -212,7 +213,7 @@ func (s *Store) ListQueues(ctx context.Context) ([]domain.Queue, error) {
 	for rows.Next() {
 		var queue domain.Queue
 		var createdAt int64
-		if err := rows.Scan(&queue.ID, &queue.Name, &queue.Prefix, &queue.Digits, &queue.MinValue, &queue.MaxValue, &queue.CurrentValue, &createdAt); err != nil {
+		if err := rows.Scan(&queue.ID, &queue.Name, &queue.Prefix, &queue.Digits, &queue.MinValue, &queue.MaxValue, &queue.CurrentValue, &queue.AllowCustomCalls, &createdAt); err != nil {
 			return nil, fmt.Errorf("scan queue: %w", err)
 		}
 		queue.CreatedAt = time.Unix(createdAt, 0).UTC()
@@ -222,6 +223,21 @@ func (s *Store) ListQueues(ctx context.Context) ([]domain.Queue, error) {
 		return nil, fmt.Errorf("iterate queues: %w", err)
 	}
 	return queues, nil
+}
+
+func (s *Store) SetQueueCustomCalls(ctx context.Context, queueID int64, enabled bool) error {
+	result, err := s.db.ExecContext(ctx, "UPDATE queues SET allow_custom_calls = ? WHERE id = ?", enabled, queueID)
+	if err != nil {
+		return fmt.Errorf("update queue custom calls: %w", err)
+	}
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read updated queue count: %w", err)
+	}
+	if updated == 0 {
+		return domain.ErrQueueNotFound
+	}
+	return nil
 }
 
 func (s *Store) CreateCounter(ctx context.Context, name string, tokenHash []byte) (domain.Counter, error) {
@@ -396,6 +412,134 @@ func (s *Store) CallNext(ctx context.Context, queueID int64, tokenHash []byte) (
 
 	if err := tx.Commit(); err != nil {
 		return domain.Call{}, fmt.Errorf("commit call transaction: %w", err)
+	}
+	return call, nil
+}
+
+func (s *Store) CallCustom(ctx context.Context, queueID int64, sequenceValue int, tokenHash []byte) (domain.Call, error) {
+	if len(tokenHash) != 32 {
+		return domain.Call{}, domain.ErrCounterUnavailable
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return domain.Call{}, fmt.Errorf("begin custom call transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	var prefix string
+	var digits, minValue, maxValue int
+	var allowed bool
+	err = tx.QueryRowContext(ctx, `
+		UPDATE queues SET current_value = current_value
+		WHERE id = ?
+		RETURNING prefix, digits, min_value, max_value, allow_custom_calls`, queueID,
+	).Scan(&prefix, &digits, &minValue, &maxValue, &allowed)
+	if errors.Is(err, sql.ErrNoRows) {
+		return domain.Call{}, domain.ErrQueueNotFound
+	}
+	if err != nil {
+		return domain.Call{}, fmt.Errorf("load queue for custom call: %w", err)
+	}
+	if !allowed {
+		return domain.Call{}, domain.ErrCustomCallsDisabled
+	}
+	if sequenceValue < minValue || sequenceValue > maxValue {
+		return domain.Call{}, domain.ErrSequenceOutOfRange
+	}
+
+	call := domain.Call{
+		QueueID:       queueID,
+		Number:        domain.FormatNumber(prefix, digits, sequenceValue),
+		SequenceValue: sequenceValue,
+		Kind:          domain.CallKindManual,
+	}
+	var calledAt int64
+	err = tx.QueryRowContext(ctx, `
+		INSERT INTO calls (queue_id, counter_id, number, sequence_value, kind)
+		SELECT ?, id, ?, ?, ?
+		FROM counters
+		WHERE token_hash = ? AND enabled = 1
+		RETURNING id, counter_id, called_at`,
+		call.QueueID, call.Number, call.SequenceValue, call.Kind, tokenHash,
+	).Scan(&call.ID, &call.CounterID, &calledAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return domain.Call{}, domain.ErrCounterUnavailable
+	}
+	if err != nil {
+		return domain.Call{}, fmt.Errorf("record custom call: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE queues SET current_value = ? WHERE id = ?", sequenceValue, queueID); err != nil {
+		return domain.Call{}, fmt.Errorf("synchronize queue after custom call: %w", err)
+	}
+	call.CalledAt = time.Unix(calledAt, 0).UTC()
+	if err := tx.Commit(); err != nil {
+		return domain.Call{}, fmt.Errorf("commit custom call transaction: %w", err)
+	}
+	return call, nil
+}
+
+func (s *Store) RecallLast(ctx context.Context, queueID int64, tokenHash []byte) (domain.Call, error) {
+	if len(tokenHash) != 32 {
+		return domain.Call{}, domain.ErrCounterUnavailable
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return domain.Call{}, fmt.Errorf("begin recall transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	var lockedQueueID int64
+	err = tx.QueryRowContext(ctx, `
+		UPDATE queues SET current_value = current_value
+		WHERE id = ?
+		RETURNING id`, queueID,
+	).Scan(&lockedQueueID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return domain.Call{}, domain.ErrQueueNotFound
+	}
+	if err != nil {
+		return domain.Call{}, fmt.Errorf("lock queue for recall: %w", err)
+	}
+
+	var counterID int64
+	err = tx.QueryRowContext(ctx,
+		"SELECT id FROM counters WHERE token_hash = ? AND enabled = 1", tokenHash,
+	).Scan(&counterID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return domain.Call{}, domain.ErrCounterUnavailable
+	}
+	if err != nil {
+		return domain.Call{}, fmt.Errorf("load counter for recall: %w", err)
+	}
+
+	call := domain.Call{QueueID: queueID, CounterID: counterID, Kind: domain.CallKindRecall}
+	err = tx.QueryRowContext(ctx, `
+		SELECT number, sequence_value
+		FROM calls
+		WHERE queue_id = ? AND counter_id = ?
+		ORDER BY id DESC
+		LIMIT 1`, queueID, counterID,
+	).Scan(&call.Number, &call.SequenceValue)
+	if errors.Is(err, sql.ErrNoRows) {
+		return domain.Call{}, domain.ErrNoPreviousCall
+	}
+	if err != nil {
+		return domain.Call{}, fmt.Errorf("load previous call: %w", err)
+	}
+
+	var calledAt int64
+	err = tx.QueryRowContext(ctx, `
+		INSERT INTO calls (queue_id, counter_id, number, sequence_value, kind)
+		VALUES (?, ?, ?, ?, ?)
+		RETURNING id, called_at`,
+		call.QueueID, call.CounterID, call.Number, call.SequenceValue, call.Kind,
+	).Scan(&call.ID, &calledAt)
+	if err != nil {
+		return domain.Call{}, fmt.Errorf("record recall: %w", err)
+	}
+	call.CalledAt = time.Unix(calledAt, 0).UTC()
+	if err := tx.Commit(); err != nil {
+		return domain.Call{}, fmt.Errorf("commit recall transaction: %w", err)
 	}
 	return call, nil
 }

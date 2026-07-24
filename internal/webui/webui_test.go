@@ -39,7 +39,7 @@ func TestHomePage(t *testing.T) {
 func TestCallerPageListsQueues(t *testing.T) {
 	handler, store := testHandler(t)
 	if _, err := store.CreateQueue(context.Background(), domain.CreateQueueParams{
-		Name: "General", Prefix: "A", Digits: 3, MinValue: 1, MaxValue: 999,
+		Name: "General", Prefix: "A", Digits: 3, MinValue: 1, MaxValue: 999, AllowCustomCalls: true,
 	}); err != nil {
 		t.Fatalf("CreateQueue() error = %v", err)
 	}
@@ -58,6 +58,8 @@ func TestCallerPageListsQueues(t *testing.T) {
 		`id="caller-identity"`,
 		"General",
 		`data-queue-id="1"`,
+		`class="caller-recall secondary"`,
+		`class="caller-custom-form"`,
 		`src="/static/caller.js"`,
 	} {
 		if !strings.Contains(response.Body.String(), expected) {
@@ -321,6 +323,19 @@ func TestAdminLoginCreateQueueAndCSRF(t *testing.T) {
 	queues, err := store.ListQueues(context.Background())
 	if err != nil || len(queues) != 1 || queues[0].Name != "General" {
 		t.Fatalf("ListQueues() = %#v, %v", queues, err)
+	}
+
+	enableCustomCalls := formRequest(http.MethodPost, "/admin/queues/1/custom-calls", url.Values{
+		"csrf_token": {csrfMatch[1]}, "enabled": {"true"},
+	}, cookies[0])
+	enableCustomCallsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(enableCustomCallsResponse, enableCustomCalls)
+	if enableCustomCallsResponse.Code != http.StatusSeeOther {
+		t.Fatalf("enable custom calls status = %d, want %d", enableCustomCallsResponse.Code, http.StatusSeeOther)
+	}
+	queues, err = store.ListQueues(context.Background())
+	if err != nil || len(queues) != 1 || !queues[0].AllowCustomCalls {
+		t.Fatalf("queues after enabling custom calls = %#v, %v", queues, err)
 	}
 
 	updateSettings := formRequest(http.MethodPost, "/admin/settings", url.Values{

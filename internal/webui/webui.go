@@ -31,6 +31,7 @@ type Store interface {
 	UpdateSettings(context.Context, domain.Settings) (domain.Settings, error)
 	ListQueues(context.Context) ([]domain.Queue, error)
 	CreateQueue(context.Context, domain.CreateQueueParams) (domain.Queue, error)
+	SetQueueCustomCalls(context.Context, int64, bool) error
 	ListCounters(context.Context) ([]domain.Counter, error)
 	CreateCounter(context.Context, string, []byte) (domain.Counter, error)
 	RevokeCounter(context.Context, int64) error
@@ -110,6 +111,7 @@ func New(version string, store Store) (http.Handler, error) {
 	mux.HandleFunc("POST /admin/logout", application.logout)
 	mux.HandleFunc("POST /admin/settings", application.updateSettings)
 	mux.HandleFunc("POST /admin/queues", application.createQueue)
+	mux.HandleFunc("POST /admin/queues/{queueID}/custom-calls", application.setQueueCustomCalls)
 	mux.HandleFunc("POST /admin/counters", application.createCounter)
 	mux.HandleFunc("POST /admin/counters/{counterID}/revoke", application.revokeCounter)
 	mux.HandleFunc("POST /admin/counters/{counterID}/rotate", application.rotateCounter)
@@ -276,12 +278,30 @@ func (a *app) createQueue(w http.ResponseWriter, r *http.Request) {
 	_, err := a.store.CreateQueue(r.Context(), domain.CreateQueueParams{
 		Name: r.PostFormValue("name"), Prefix: r.PostFormValue("prefix"),
 		Digits: digits, MinValue: minValue, MaxValue: maxValue,
+		AllowCustomCalls: r.PostFormValue("allow_custom_calls") == "on",
 	})
 	if err != nil {
 		a.redirectAdminError(w, r, err.Error())
 		return
 	}
 	_ = current
+	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+}
+
+func (a *app) setQueueCustomCalls(w http.ResponseWriter, r *http.Request) {
+	_, ok := a.authorizeForm(w, r)
+	if !ok {
+		return
+	}
+	queueID, err := parseID(r.PathValue("queueID"))
+	if err != nil {
+		a.redirectAdminError(w, r, a.message(r, "admin.invalid_queue_id"))
+		return
+	}
+	if err := a.store.SetQueueCustomCalls(r.Context(), queueID, r.PostFormValue("enabled") == "true"); err != nil {
+		a.redirectAdminError(w, r, err.Error())
+		return
+	}
 	http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }
 

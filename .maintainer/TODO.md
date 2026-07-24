@@ -19,8 +19,8 @@
 - [x] Implementare registrazione sportello con token revocabile.
 - [x] Implementare la chiamata automatica nel dominio, nella persistenza e nell'API HTTP.
 - [x] Creare l'interfaccia operatore/Caller per la chiamata automatica.
-- [ ] Implementare la chiamata di un numero personalizzato, validandolo rispetto alla numerazione della coda.
-- [ ] Implementare la richiamata dell'ultimo numero senza avanzare la coda.
+- [x] Implementare la chiamata di un numero personalizzato, validandolo rispetto alla numerazione della coda e consentendolo solo sulle code configurate per dispenser cartacei manuali.
+- [x] Implementare la richiamata dell'ultimo numero senza avanzare la coda.
 - [x] Creare l'interfaccia Sportello per l'operatore e il relativo display pubblico.
 - [x] Creare il monitor pubblico a tutto schermo con lista delle chiamate recenti, segnale acustico ed evidenziazione visiva delle nuove chiamate.
 - [x] Aggiusta header pagina admin (classe topbar tutto sezioni attaccate)
@@ -50,4 +50,5 @@
 
 - [ ] Aggiungere politiche di numerazione alfanumerica progressiva per dispenser fisici, con rollover configurabile (es. `A00–Z99` e `AA00–ZZ99`), mantenendo il prefisso fisso come modalità semplice.
 - [ ] Sistema automatizzato di stampa numero da totem dispenser
+- [ ] Se sistema automatizzato disattiva chiamate numeri manuali
 - [ ] Setting per temi, logo, banner, volume dettagliato e altre personalizzazioni.

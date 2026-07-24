@@ -17,8 +17,8 @@
 - [x] Counter registration with revocable and rotatable browser tokens
 - [x] Automatic next-number call in the domain, persistence layer and HTTP API
 - [x] Operator/caller page for automatic calls
-- [ ] Validated custom-number calls from the operator page
-- [ ] Repeat the last call without advancing the queue
+- [x] Validated custom-number calls for queues explicitly configured with a manual paper dispenser
+- [x] Repeat the last call without advancing the queue
 - [x] Counter page for the operator and dedicated counter display
 - [x] Full-screen public monitor with recent calls, visual emphasis and an audible cue
 - [x] SSE updates with automatic browser reconnect and snapshot recovery

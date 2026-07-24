@@ -41,9 +41,26 @@ REST Client recupera automaticamente dalle prime due risposte l'ID della coda e 
 
 Gli endpoint sotto `/api/v1/admin` richiedono il token amministrativo. L'endpoint `calls/next` richiede invece il token dello sportello restituito al momento della registrazione. Gli esempi successivi mostrano anche rotazione, revoca e riattivazione; una riattivazione genera sempre un nuovo token.
 
-In alternativa, impostare manualmente `queueId` e `counterToken` nell'ultima sezione del file `.rest`. Non inserire credenziali direttamente nel file versionato.
+Per prove legate a un database già esistente usare `api/turnino.local.rest`, escluso da Git tramite `/api/*.local.rest`. Modificare all'inizio del file i valori locali:
+
+```http
+@baseUrl = http://localhost:8080
+@queueId = 1
+@counterToken = incollare-qui-il-token-reale
+```
+
+Il file contiene esempi per identificare la postazione, chiamare il prossimo numero, effettuare una chiamata personalizzata e richiamare l'ultimo numero. È possibile aggiungervi liberamente token, ID e richieste temporanee relative alla propria installazione. Verificare che resti ignorato prima di inserire credenziali:
+
+```sh
+git check-ignore -v api/turnino.local.rest
+git status --short --ignored api/turnino.local.rest
+```
+
+Non spostare valori reali in `api/turnino.rest`, perché quel file è versionato e costituisce la raccolta pubblica di esempi riproducibili.
 
 Per provare il flusso dal browser, registrare uno sportello nell'amministrazione, copiare il token mostrato una sola volta, aprire <http://localhost:8080/caller> e salvarlo nel browser. Il Caller conserva il token in `localStorage`. Per sostituirlo basta salvare il nuovo valore; prima di dismettere una postazione, revocarlo dall'amministrazione e cancellare i dati del sito dal browser. Rotazione e revoca rendono immediatamente inutilizzabile il valore precedentemente salvato.
+
+La richiamata usa `POST /api/v1/queues/{id}/calls/recall`: ripete l'ultima chiamata effettuata dalla stessa postazione sulla stessa coda, registra un evento di tipo `recall` e non modifica il progressivo. La chiamata personalizzata usa `POST /api/v1/queues/{id}/calls/custom` con `{"sequence_value": 37}`; è accettata solo se l'admin ha abilitato la funzione sulla coda, valida l'intervallo, registra un evento `manual` e sincronizza il progressivo, così la chiamata automatica successiva continua da 38. Vedere `api/turnino.rest`.
 
 Aprire <http://localhost:8080/counter-display> dallo stesso browser per provare il display dedicato: usa automaticamente il token del Caller, ricava l'identità dello sportello da `/api/v1/counters/me` e filtra snapshot ed eventi SSE per `counter_id`. Per simulare operatore e display contemporaneamente, tenere Caller e display in due schede affiancate.
 

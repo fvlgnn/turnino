@@ -31,7 +31,7 @@ The public server starts without configuration. To bootstrap the administration 
 
 Open <http://localhost:8080>. The health endpoint is available at <http://localhost:8080/healthz>.
 The administration interface is available at <http://localhost:8080/admin> after the administrator credential has been bootstrapped.
-The operator interface is available at <http://localhost:8080/caller>. Paste the token issued when its counter was registered; the token remains in that browser and authenticates calls to the existing API.
+The operator interface is available at <http://localhost:8080/caller>. Paste the token issued when its counter was registered; the token remains in that browser and authenticates automatic calls and recalls. Queues backed by a separate manual paper dispenser can explicitly enable validated custom-number calls from the administration page.
 The dedicated counter display is available at <http://localhost:8080/counter-display>. Open it from the Caller to reuse the counter token saved in the same browser; it then shows only calls made by that counter.
 The autonomous live public monitor is available at <http://localhost:8080/monitor>. During development, open `/monitor?test=1` to expose sound/fullscreen controls and launch a Caller tab from the same browser. See the [kiosk deployment guide](docs/kiosk.md) for Windows Edge and Raspberry Pi Chromium autostart.
 

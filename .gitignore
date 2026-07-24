@@ -20,6 +20,7 @@
 .env
 .env.*
 !.env.example
+/api/*.local.rest
 
 # Editors and operating systems
 .idea/

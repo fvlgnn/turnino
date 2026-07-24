@@ -37,7 +37,8 @@ func TestAdminAndCounterTokenFlow(t *testing.T) {
 	requestJSON(t, http.MethodPost, server.URL+"/admin/queues", `{}`, "", http.StatusUnauthorized)
 
 	queue := requestJSON(t, http.MethodPost, server.URL+"/admin/queues", `{
-		"name":"General", "prefix":"A", "digits":3, "min_value":1, "max_value":999
+		"name":"General", "prefix":"A", "digits":3, "min_value":1, "max_value":999,
+		"allow_custom_calls":true
 	}`, adminToken, http.StatusCreated)
 	counter := requestJSON(t, http.MethodPost, server.URL+"/admin/counters", `{"name":"Counter 1"}`, adminToken, http.StatusCreated)
 	queueID := strconv.Itoa(int(queue["id"].(float64)))
@@ -83,6 +84,18 @@ func TestAdminAndCounterTokenFlow(t *testing.T) {
 	}
 	if liveCall["number"] != "A001" || liveCall["queue"] != "General" || liveCall["counter"] != "Counter 1" {
 		t.Fatalf("live SSE call = %#v", liveCall)
+	}
+	recalled := requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/recall", "", counterToken, http.StatusCreated)
+	if recalled["number"] != "A001" || recalled["kind"] != "recall" {
+		t.Fatalf("recalled call = %#v", recalled)
+	}
+	custom := requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/custom", `{"sequence_value":37}`, counterToken, http.StatusCreated)
+	if custom["number"] != "A037" || custom["kind"] != "manual" {
+		t.Fatalf("custom call = %#v", custom)
+	}
+	afterCustom := requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/next", "", counterToken, http.StatusCreated)
+	if afterCustom["number"] != "A038" {
+		t.Fatalf("call after custom number = %#v", afterCustom)
 	}
 
 	rotated := requestJSON(t, http.MethodPost, server.URL+"/admin/counters/"+counterID+"/token", "", adminToken, http.StatusOK)

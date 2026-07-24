@@ -59,8 +59,19 @@
           <h2>{{t .Lang "queues.title"}}</h2>
           {{if .Queues}}
           <div class="table-wrap"><table>
-            <thead><tr><th>{{t .Lang "queues.name"}}</th><th>{{t .Lang "queues.number"}}</th><th>{{t .Lang "queues.range"}}</th></tr></thead>
-            <tbody>{{range .Queues}}<tr><td>{{.Name}}</td><td>{{if lt .CurrentValue .MinValue}}{{t $.Lang "queues.not_started"}}{{else}}{{printf "%s%0*d" .Prefix .Digits .CurrentValue}}{{end}}</td><td>{{.MinValue}}–{{.MaxValue}} ({{.Digits}} {{t $.Lang "queues.digits"}})</td></tr>{{end}}</tbody>
+            <thead><tr><th>{{t .Lang "queues.name"}}</th><th>{{t .Lang "queues.number"}}</th><th>{{t .Lang "queues.range"}}</th><th>{{t .Lang "queues.custom_calls"}}</th></tr></thead>
+            <tbody>{{range .Queues}}<tr>
+              <td>{{.Name}}</td>
+              <td>{{if lt .CurrentValue .MinValue}}{{t $.Lang "queues.not_started"}}{{else}}{{printf "%s%0*d" .Prefix .Digits .CurrentValue}}{{end}}</td>
+              <td>{{.MinValue}}–{{.MaxValue}} ({{.Digits}} {{t $.Lang "queues.digits"}})</td>
+              <td>
+                <form method="post" action="/admin/queues/{{.ID}}/custom-calls">
+                  <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                  <input type="hidden" name="enabled" value="{{if .AllowCustomCalls}}false{{else}}true{{end}}">
+                  <button class="secondary compact-button" type="submit">{{if .AllowCustomCalls}}{{t $.Lang "queues.disable"}}{{else}}{{t $.Lang "queues.enable"}}{{end}}</button>
+                </form>
+              </td>
+            </tr>{{end}}</tbody>
           </table></div>
           {{else}}<p class="muted">{{t .Lang "queues.empty"}}</p>{{end}}
           <h3>{{t .Lang "queues.add"}}</h3>
@@ -71,6 +82,7 @@
             <label>{{t .Lang "queues.digits"}}<input name="digits" type="number" value="3" min="1" max="6" required></label>
             <label>{{t .Lang "queues.first"}}<input name="min_value" type="number" value="1" min="0" required></label>
             <label>{{t .Lang "queues.last"}}<input name="max_value" type="number" value="999" min="0" required></label>
+            <label class="checkbox"><input name="allow_custom_calls" type="checkbox"> {{t .Lang "queues.allow_custom_calls"}}</label>
             <button type="submit">{{t .Lang "queues.add"}}</button>
           </form>
         </article>
