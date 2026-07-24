@@ -225,6 +225,28 @@ http://localhost:8080/monitor?test=1
 
 Production launchers deliberately use `/monitor` without `test=1`.
 
+## Dedicated counter display
+
+`/counter-display` uses the counter token automatically when it shares a browser profile with the Caller. A separate display can be paired without copying that operational token: sign in to the administration page on that device and select **Configure display** for the desired counter. The generated URL stores the public counter identity in that browser and immediately removes the query string from the address bar.
+
+The association is intentionally browser-local. It does not depend on MAC addresses or IP addresses, which may change, be hidden by a proxy, or identify the host rather than an individual browser display.
+
+For an unattended Windows display, use the dedicated wrapper and its counter ID:
+
+```powershell
+.\deploy\kiosk\windows\start-counter-display.ps1 -CounterID 1
+```
+
+Optional `BaseUrl`, `Language`, `ScaleFactor`, and `RestartDelaySeconds` parameters follow the public-monitor launcher. The first kiosk load contains `?counter=1`; Turnino stores the association in the dedicated Edge profile and cleans the visible URL.
+
+On Raspberry Pi:
+
+```sh
+TURNINO_COUNTER_ID=1 deploy/kiosk/raspberry-pi/start-counter-display.sh
+```
+
+Set `TURNINO_BASE_URL` when Turnino is not on the same host. The other `TURNINO_MONITOR_LANGUAGE`, `TURNINO_KIOSK_SCALE`, `TURNINO_KIOSK_RESTART_DELAY`, and `TURNINO_BROWSER` variables are passed through to the shared launcher.
+
 ## Docker Desktop and LAN access
 
 When Docker Desktop publishes `8080:8080` directly on Windows, Turnino is no longer reached through the WSL NAT boundary. A phone on the same LAN should be able to use the Windows LAN address, provided:

@@ -2,6 +2,8 @@
 
 Turnino is licensed under the GNU Affero General Public License version 3.0 (`AGPL-3.0-only`). The complete terms are in the root `LICENSE` file.
 
+Copyright (c) 2026-present Gianni Favilli (fvlgnn). The project copyright notice is also provided in the root `NOTICE` file.
+
 AGPL-3.0 permits running, studying, modifying and redistributing the program, including commercial activity. Its strong copyleft requires covered derivative works to remain under the same license when conveyed. Section 13 also requires an operator of a modified network version to offer its corresponding source to users interacting with it remotely.
 
 Practical examples:

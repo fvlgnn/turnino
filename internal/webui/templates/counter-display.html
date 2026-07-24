@@ -1,0 +1,43 @@
+{{define "counter-display.html"}}
+<!doctype html>
+<html lang="{{.Lang}}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>{{t .Lang "counter_display.title"}} · {{.Settings.InstallationName}}</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <script src="/static/counter-display.js" defer></script>
+  </head>
+  <body class="counter-display-body">
+    <main
+      class="counter-display-main"
+      data-connected="{{t .Lang "monitor.connected"}}"
+      data-reconnecting="{{t .Lang "monitor.reconnecting"}}"
+      data-invalid-token="{{t .Lang "caller.invalid_token"}}"
+      data-load-failed="{{t .Lang "counter_display.load_failed"}}"
+      data-not-configured="{{t .Lang "counter_display.not_configured"}}"
+      data-display-counter-id="{{.DisplayCounter.ID}}"
+      data-display-counter-name="{{.DisplayCounter.Name}}">
+      <header class="counter-display-header">
+        <div>
+          <p class="eyebrow">{{.Settings.InstallationName}}</p>
+          <h1 id="counter-display-name">{{t .Lang "counter_display.title"}}</h1>
+        </div>
+        <span id="counter-display-connection" class="monitor-connection compact" role="status" aria-live="polite">{{t .Lang "monitor.reconnecting"}}</span>
+      </header>
+
+      <section id="counter-display-empty" class="counter-display-empty">
+        <p>{{t .Lang "counter_display.waiting"}}</p>
+      </section>
+
+      <section id="counter-display-call" class="counter-display-call" aria-live="polite" hidden>
+        <p id="counter-display-queue" class="counter-display-queue"></p>
+        <p id="counter-display-number" class="counter-display-number"></p>
+      </section>
+
+      <p id="counter-display-status" class="caller-status" role="status" aria-live="polite"></p>
+    </main>
+  </body>
+</html>
+{{end}}

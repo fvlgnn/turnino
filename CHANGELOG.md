@@ -30,10 +30,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Full-screen public monitor with recent calls, SSE snapshot recovery, live visual emphasis, optional browser sound and a same-browser test mode.
 - Autonomous production monitor mode and supervised kiosk launchers for Microsoft Edge on Windows and Chromium on Raspberry Pi.
 - Kiosk language, scale and restart configuration plus a documented security and troubleshooting boundary.
+- Dedicated SSE counter display with automatic same-browser discovery, administration pairing links and Windows/Raspberry Pi kiosk launchers.
 
 ### Fixed
 
 - Windows kiosk launcher now preserves a single Edge executable result as an array instead of treating its first character as the executable path.
+- Counter display waiting and active-call states no longer render at the same time.
 
 ## [0.1.0] - 2026-07-24
 

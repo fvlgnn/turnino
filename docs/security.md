@@ -78,6 +78,7 @@ Revoking or rotating a counter invalidates the old token. A rejected counter cal
 The following resources are intentionally public because they display waiting-room information:
 
 - `/monitor`;
+- `/counter-display` (a browser-local public counter ID selects the display, while call events remain public);
 - `/api/v1/events/calls`;
 - the home page and static assets;
 - `/healthz`.

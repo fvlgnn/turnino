@@ -54,9 +54,19 @@ Authorization: Bearer {{adminToken}}
 POST {{baseUrl}}/api/v1/admin/counters/{{createCounter.response.body.$.id}}/reactivate
 Authorization: Bearer {{adminToken}}
 
-### Call the next number with manually supplied values
-@queueId = 2
+
+### Manual Customize ###
+
+@queueId = 1
 @counterToken = hmbs60JhRuDmyYq_dg1xEVg7ZSzD_UNlh8S8D_hZXvo
 
+### Call the next number with manually supplied values
 POST {{baseUrl}}/api/v1/queues/{{queueId}}/calls/next
 Authorization: Bearer {{counterToken}}
+
+### Call me counter
+GET {{baseUrl}}/api/v1/counters/me
+Authorization: Bearer {{counterToken}}
+
+
+

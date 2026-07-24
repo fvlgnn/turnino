@@ -19,7 +19,7 @@
 - [x] Operator/caller page for automatic calls
 - [ ] Validated custom-number calls from the operator page
 - [ ] Repeat the last call without advancing the queue
-- [ ] Counter page for the operator and dedicated counter display
+- [x] Counter page for the operator and dedicated counter display
 - [x] Full-screen public monitor with recent calls, visual emphasis and an audible cue
 - [x] SSE updates with automatic browser reconnect and snapshot recovery
 - [ ] Conservative polling fallback for browsers without SSE support
@@ -30,6 +30,7 @@
 
 ## Phase 2 — Adaptation and polish
 
+- Progressive alphanumeric numbering policies for physical ticket dispensers (for example `A00–Z99`)
 - Configurable themes, logo and banner
 - Daily or manual numbering reset
 - Backup download from the administration UI, retention policy and filtered exports

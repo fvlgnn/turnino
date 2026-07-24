@@ -5,13 +5,12 @@
   const page = document.querySelector(".caller-main");
   const tokenForm = document.querySelector("#caller-token-form");
   const tokenInput = document.querySelector("#caller-token");
-  const forgetButton = document.querySelector("#caller-forget-token");
   const identity = document.querySelector("#caller-identity");
   const tokenSettings = document.querySelector("#caller-token-settings");
   const status = document.querySelector("#caller-status");
   const callButtons = [...document.querySelectorAll(".caller-next")];
 
-  if (!page || !tokenForm || !tokenInput || !forgetButton || !identity || !tokenSettings || !status) {
+  if (!page || !tokenForm || !tokenInput || !identity || !tokenSettings || !status) {
     return;
   }
 
@@ -33,13 +32,6 @@
       return true;
     } catch {
       return false;
-    }
-  };
-  const forgetToken = () => {
-    try {
-      localStorage.removeItem(storageKey);
-    } catch {
-      // The field is still cleared when browser storage is unavailable.
     }
   };
   const setCalling = (calling) => {
@@ -107,20 +99,12 @@
     });
   });
 
-  forgetButton.addEventListener("click", () => {
-    forgetToken();
-    clearIdentity();
-    tokenSettings.open = true;
-    tokenInput.value = "";
-    setStatus(message("tokenForgotten"));
-    tokenInput.focus();
-  });
-
   callButtons.forEach((button) => {
     button.addEventListener("click", async () => {
       const token = storedToken();
       if (!token) {
         setStatus(message("missingToken"), "error");
+        tokenSettings.open = true;
         tokenInput.focus();
         return;
       }

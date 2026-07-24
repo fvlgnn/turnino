@@ -12,6 +12,10 @@ body {
   place-items: center;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 main {
   width: min(42rem, calc(100% - 3rem));
 }
@@ -210,14 +214,20 @@ button.danger {
   text-decoration: none;
 }
 
+.compact-button {
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
+}
+
 .caller-main {
   width: min(64rem, calc(100% - 3rem));
   margin: 2.5rem auto;
 }
 
 .caller-token {
-  margin-bottom: 1rem;
-  padding: 0.9rem 1rem;
+  margin-top: 2rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #cfddd5;
 }
 
 .caller-identity {
@@ -229,6 +239,8 @@ button.danger {
 
 .caller-token summary {
   cursor: pointer;
+  color: #607268;
+  font-size: 0.85rem;
   font-weight: 750;
 }
 
@@ -238,9 +250,16 @@ button.danger {
 
 .caller-token-form {
   display: grid;
-  grid-template-columns: minmax(12rem, 1fr) auto auto;
+  grid-template-columns: minmax(12rem, 1fr) auto;
   align-items: end;
   gap: 0.75rem;
+}
+
+.caller-display-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  color: #607268;
+  font-size: 0.8rem;
 }
 
 .caller-status {
@@ -255,6 +274,77 @@ button.danger {
 
 .caller-status.error {
   color: #b42318;
+}
+
+.counter-display-body {
+  display: block;
+  overflow: hidden;
+  background: #10251c;
+  color: #fff;
+}
+
+.counter-display-main {
+  display: grid;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+.counter-display-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.counter-display-header h1 {
+  color: #fff;
+  font-size: clamp(1.75rem, 5vw, 4rem);
+  letter-spacing: -0.04em;
+}
+
+.counter-display-header .eyebrow {
+  margin: 0 0 0.25rem;
+  color: #9eb2a7;
+}
+
+.counter-display-empty,
+.counter-display-call {
+  display: grid;
+  min-height: 0;
+  place-content: center;
+  text-align: center;
+}
+
+.counter-display-empty p {
+  color: #9eb2a7;
+  font-size: clamp(1.5rem, 5vw, 3.5rem);
+}
+
+.counter-display-queue {
+  margin: 0;
+  color: #b9dbc9;
+  font-size: clamp(1.25rem, 4vw, 3rem);
+  font-weight: 750;
+}
+
+.counter-display-number {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(7rem, 35vw, 24rem);
+  font-weight: 900;
+  letter-spacing: -0.08em;
+  line-height: 0.95;
+}
+
+.counter-display-main > .caller-status {
+  margin: 0;
+  text-align: center;
 }
 
 .caller-queues {

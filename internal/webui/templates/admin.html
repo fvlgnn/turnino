@@ -84,6 +84,7 @@
               <td>{{.Name}}</td><td>{{if .Enabled}}{{t $.Lang "counters.active"}}{{else}}{{t $.Lang "counters.revoked"}}{{end}}</td>
               <td class="actions">
                 {{if .Enabled}}
+                <a class="button-link compact-button" href="/counter-display?counter={{.ID}}" target="_blank" rel="noopener">{{t $.Lang "counters.configure_display"}}</a>
                 <form method="post" action="/admin/counters/{{.ID}}/rotate"><input type="hidden" name="csrf_token" value="{{$.CSRFToken}}"><button class="secondary" type="submit">{{t $.Lang "counters.rotate"}}</button></form>
                 <form method="post" action="/admin/counters/{{.ID}}/revoke"><input type="hidden" name="csrf_token" value="{{$.CSRFToken}}"><button class="danger" type="submit">{{t $.Lang "counters.revoke"}}</button></form>
                 {{else}}

@@ -70,6 +70,7 @@ type pageData struct {
 	Calls           []domain.CallRecord
 	TestMode        bool
 	NewCounterToken string
+	DisplayCounter  domain.Counter
 }
 
 func New(version string, store Store) (http.Handler, error) {
@@ -102,6 +103,7 @@ func New(version string, store Store) (http.Handler, error) {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticFiles)))
 	mux.HandleFunc("GET /", application.home)
 	mux.HandleFunc("GET /caller", application.caller)
+	mux.HandleFunc("GET /counter-display", application.counterDisplay)
 	mux.HandleFunc("GET /monitor", application.monitor)
 	mux.HandleFunc("GET /admin", application.admin)
 	mux.HandleFunc("POST /admin/login", application.login)
@@ -133,6 +135,26 @@ func (a *app) caller(w http.ResponseWriter, r *http.Request) {
 	data := a.page(r)
 	data.Queues = queues
 	a.render(w, "caller.html", data)
+}
+
+func (a *app) counterDisplay(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	data := a.page(r)
+	counterID, err := strconv.ParseInt(r.URL.Query().Get("counter"), 10, 64)
+	if err == nil && counterID > 0 {
+		counters, listErr := a.store.ListCounters(r.Context())
+		if listErr != nil {
+			http.Error(w, "Could not load counters", http.StatusInternalServerError)
+			return
+		}
+		for _, counter := range counters {
+			if counter.ID == counterID && counter.Enabled {
+				data.DisplayCounter = counter
+				break
+			}
+		}
+	}
+	a.render(w, "counter-display.html", data)
 }
 
 func (a *app) monitor(w http.ResponseWriter, r *http.Request) {

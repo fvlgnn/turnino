@@ -53,6 +53,8 @@ func TestCallerPageListsQueues(t *testing.T) {
 	for _, expected := range []string{
 		"Call a number",
 		"Counter token",
+		"Workstation settings",
+		"Open workstation display",
 		`id="caller-identity"`,
 		"General",
 		`data-queue-id="1"`,
@@ -61,6 +63,13 @@ func TestCallerPageListsQueues(t *testing.T) {
 		if !strings.Contains(response.Body.String(), expected) {
 			t.Errorf("response does not contain %q", expected)
 		}
+	}
+	body := response.Body.String()
+	if strings.Contains(body, `id="caller-forget-token"`) {
+		t.Error("caller unexpectedly exposes the forget-token action")
+	}
+	if strings.Index(body, `class="caller-queues"`) > strings.Index(body, `id="caller-token-settings"`) {
+		t.Error("workstation settings appear before the primary queue actions")
 	}
 }
 
@@ -71,6 +80,51 @@ func TestCallerPageWithoutQueues(t *testing.T) {
 	handler.ServeHTTP(response, request)
 	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "No queues are configured.") {
 		t.Fatalf("empty caller page = %d %q", response.Code, response.Body.String())
+	}
+}
+
+func TestCounterDisplayPage(t *testing.T) {
+	handler, _ := testHandler(t)
+	request := httptest.NewRequest(http.MethodGet, "/counter-display", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	for _, expected := range []string{
+		"Counter display",
+		"Waiting for a call",
+		`src="/static/counter-display.js"`,
+		`data-not-configured="Configure this display from the administration page."`,
+		`data-display-counter-id="0"`,
+	} {
+		if !strings.Contains(response.Body.String(), expected) {
+			t.Errorf("response does not contain %q", expected)
+		}
+	}
+}
+
+func TestCounterDisplayCanBeConfiguredByCounterID(t *testing.T) {
+	handler, store := testHandler(t)
+	tokenHash := sha256.Sum256([]byte("counter-display-token"))
+	counter, err := store.CreateCounter(context.Background(), "Counter 1", tokenHash[:])
+	if err != nil {
+		t.Fatalf("CreateCounter() error = %v", err)
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/counter-display?counter=1", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	for _, expected := range []string{
+		`data-display-counter-id="1"`,
+		`data-display-counter-name="Counter 1"`,
+	} {
+		if !strings.Contains(response.Body.String(), expected) {
+			t.Errorf("response does not contain %q for counter %#v", expected, counter)
+		}
 	}
 }
 

@@ -19,6 +19,8 @@ The call-event endpoint sends a recent-call snapshot from SQLite whenever a moni
 
 `/monitor` is the autonomous production view: it has no interactive setup controls and relies on the browser's kiosk and autoplay policies. `/monitor?test=1` exposes sound, fullscreen and Caller controls for development only. Platform launchers supervise Edge or Chromium and restart the browser if it exits.
 
+`/counter-display` reuses the counter token stored by `/caller` when both pages run in the same browser. On a separate device, an administration link supplies the public counter ID once and the browser stores the association locally. Neither mode depends on the host's MAC or IP address. The page filters the public SSE snapshot and live calls in the browser so it shows only that counter's latest number.
+
 ## Planned domain
 
 - **Queue** owns a numbering policy and its current sequence.

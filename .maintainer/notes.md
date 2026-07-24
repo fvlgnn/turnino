@@ -43,7 +43,11 @@ Gli endpoint sotto `/api/v1/admin` richiedono il token amministrativo. L'endpoin
 
 In alternativa, impostare manualmente `queueId` e `counterToken` nell'ultima sezione del file `.rest`. Non inserire credenziali direttamente nel file versionato.
 
-Per provare il flusso dal browser, registrare uno sportello nell'amministrazione, copiare il token mostrato una sola volta, aprire <http://localhost:8080/caller> e salvarlo nel browser. Il Caller conserva il token in `localStorage`; usare “Dimentica token” su postazioni condivise o prima di dismettere il browser. Rotazione e revoca rendono immediatamente inutilizzabile il valore salvato.
+Per provare il flusso dal browser, registrare uno sportello nell'amministrazione, copiare il token mostrato una sola volta, aprire <http://localhost:8080/caller> e salvarlo nel browser. Il Caller conserva il token in `localStorage`. Per sostituirlo basta salvare il nuovo valore; prima di dismettere una postazione, revocarlo dall'amministrazione e cancellare i dati del sito dal browser. Rotazione e revoca rendono immediatamente inutilizzabile il valore precedentemente salvato.
+
+Aprire <http://localhost:8080/counter-display> dallo stesso browser per provare il display dedicato: usa automaticamente il token del Caller, ricava l'identità dello sportello da `/api/v1/counters/me` e filtra snapshot ed eventi SSE per `counter_id`. Per simulare operatore e display contemporaneamente, tenere Caller e display in due schede affiancate.
+
+Su un browser separato, accedere all'amministrazione da quel dispositivo e premere “Configura display” sullo sportello desiderato. Il link `?counter=<id>` salva l'associazione in `localStorage` con chiave `turnino.displayCounter` e ripulisce subito l'URL. Per cambiare associazione basta aprire il link di un altro sportello. I launcher kiosk dedicati sono descritti in `docs/kiosk.md`.
 
 Per studiare e provare monitor pubblico e Server-Sent Events, vedere `.maintainer/sse-monitor-guide.md`. La modalità <http://localhost:8080/monitor?test=1> permette di aprire il Caller in una seconda scheda dello stesso browser.
 

@@ -21,7 +21,7 @@
 - [x] Creare l'interfaccia operatore/Caller per la chiamata automatica.
 - [ ] Implementare la chiamata di un numero personalizzato, validandolo rispetto alla numerazione della coda.
 - [ ] Implementare la richiamata dell'ultimo numero senza avanzare la coda.
-- [ ] Creare l'interfaccia Sportello per l'operatore e il relativo display pubblico.
+- [x] Creare l'interfaccia Sportello per l'operatore e il relativo display pubblico.
 - [x] Creare il monitor pubblico a tutto schermo con lista delle chiamate recenti, segnale acustico ed evidenziazione visiva delle nuove chiamate.
 - [x] Aggiusta header pagina admin (classe topbar tutto sezioni attaccate)
 - [x] Implementare aggiornamenti SSE con riconnessione e recupero tramite snapshot.
@@ -32,11 +32,10 @@
 - [x] Generare un database dimostrativo riproducibile con soli dati sintetici.
 - [x] Aggiungere test del dominio, HTTP, persistenza e concorrenza.
 - [x] Documentare installazione e sviluppo nativi e con Docker.
-- [ ] Documentare installazione, avvio automatico e modalità kiosk su Raspberry Pi.
+- [x] Documentare monitor kiosk e avvio automatico del browser per Windows e Raspberry Pi.
 - [ ] IDEA Vedi se possibile migliorare facilità di gestione caller (per registrazione, in una situazione reale potrebbe essere complicato registrare con token lo sportello)
 - [x] Monitor pubblico con lista (font dei numeri progressivamente più piccolo).
 - [x] Gestire audio autonomo tramite launcher kiosk, mantenendo il pulsante come fallback nella modalità test.
-- [x] Documentare monitor kiosk e riavvio automatico del browser per Windows e Raspberry Pi.
 
 ## Fase 2 — Qualità e rilascio
 
@@ -49,4 +48,6 @@
 
 ## Fasi successive
 
+- [ ] Aggiungere politiche di numerazione alfanumerica progressiva per dispenser fisici, con rollover configurabile (es. `A00–Z99` e `AA00–ZZ99`), mantenendo il prefisso fisso come modalità semplice.
+- [ ] Sistema automatizzato di stampa numero da totem dispenser
 - [ ] Setting per temi, logo, banner, volume dettagliato e altre personalizzazioni.

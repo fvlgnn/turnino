@@ -20,7 +20,6 @@
       class="caller-main"
       data-missing-token="{{t .Lang "caller.missing_token"}}"
       data-token-saved="{{t .Lang "caller.token_saved"}}"
-      data-token-forgotten="{{t .Lang "caller.token_forgotten"}}"
       data-counter-prefix="{{t .Lang "caller.counter_prefix"}}"
       data-calling="{{t .Lang "caller.calling"}}"
       data-call-failed="{{t .Lang "caller.call_failed"}}"
@@ -33,20 +32,6 @@
       </div>
 
       <p id="caller-identity" class="caller-identity" hidden></p>
-      <details id="caller-token-settings" class="panel caller-token" open>
-        <summary>{{t .Lang "caller.configure_counter"}}</summary>
-        <div class="caller-token-content">
-          <p class="muted">{{t .Lang "caller.token_help"}}</p>
-          <form id="caller-token-form" class="caller-token-form">
-            <label>{{t .Lang "caller.counter_token"}}
-              <input id="caller-token" type="password" required autocomplete="off" spellcheck="false">
-            </label>
-            <button type="submit">{{t .Lang "caller.save_token"}}</button>
-            <button id="caller-forget-token" class="secondary" type="button">{{t .Lang "caller.forget_token"}}</button>
-          </form>
-        </div>
-      </details>
-
       <p id="caller-status" class="caller-status" role="status" aria-live="polite"></p>
 
       <section>
@@ -69,6 +54,20 @@
         <p class="panel muted">{{t .Lang "caller.no_queues"}}</p>
         {{end}}
       </section>
+
+      <details id="caller-token-settings" class="caller-token">
+        <summary>{{t .Lang "caller.configure_counter"}}</summary>
+        <div class="caller-token-content">
+          <p class="muted">{{t .Lang "caller.token_help"}}</p>
+          <form id="caller-token-form" class="caller-token-form">
+            <label>{{t .Lang "caller.counter_token"}}
+              <input id="caller-token" type="password" required autocomplete="off" spellcheck="false">
+            </label>
+            <button type="submit">{{t .Lang "caller.save_token"}}</button>
+          </form>
+          <a class="caller-display-link" href="/counter-display" target="_blank" rel="noopener">{{t .Lang "counter_display.open"}}</a>
+        </div>
+      </details>
     </main>
   </body>
 </html>
