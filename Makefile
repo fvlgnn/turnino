@@ -5,8 +5,11 @@ build:
 
 check: fmt vet test
 
-dev:
-	go run ./cmd/turnino
+dev: build
+	@pid=""; \
+	trap 'test -z "$$pid" || wait "$$pid" 2>/dev/null || true; exit 0' INT TERM; \
+	./bin/turnino & pid=$$!; \
+	wait "$$pid"
 
 docker-build:
 	docker build -t turnino:dev .

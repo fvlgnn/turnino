@@ -8,6 +8,8 @@ Questo file è versionato come promemoria operativo del maintainer, ma non fa pa
 make dev
 ```
 
+Terminare con un solo `Ctrl+C`. Turnino cancella prima le richieste lunghe, compresi gli stream SSE, e poi chiude listener e database con graceful shutdown. Un secondo `Ctrl+C` è riservato all'interruzione immediata se il processo fosse bloccato fuori dal normale ciclo di arresto.
+
 Senza Go installato:
 
 ```sh

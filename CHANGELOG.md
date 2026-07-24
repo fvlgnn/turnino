@@ -38,6 +38,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Windows kiosk launcher now preserves a single Edge executable result as an array instead of treating its first character as the executable path.
 - Counter display waiting and active-call states no longer render at the same time.
+- Graceful shutdown now cancels long-lived SSE requests before waiting for the HTTP server to stop.
+- The development target runs the built binary under a signal-aware wrapper so an intentional `Ctrl+C` is not reported as a Make error.
 
 ## [0.1.0] - 2026-07-24
 

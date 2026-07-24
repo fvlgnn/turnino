@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -114,9 +115,12 @@ func run() error {
 	})
 	mux.Handle("/", ui)
 
+	requestContext, cancelRequests := context.WithCancel(context.Background())
+	defer cancelRequests()
 	server := &http.Server{
 		Addr:              *addr,
 		Handler:           securityHeaders(requestLogger(mux)),
+		BaseContext:       func(net.Listener) context.Context { return requestContext },
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,
@@ -138,13 +142,29 @@ func run() error {
 			return fmt.Errorf("serve HTTP: %w", err)
 		}
 	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := server.Shutdown(shutdownCtx); err != nil {
-			return fmt.Errorf("graceful shutdown: %w", err)
+		stop()
+		slog.Info("turnino stopping")
+		if err := stopHTTPServer(server, cancelRequests, 10*time.Second); err != nil {
+			return err
+		}
+		if err := <-errCh; !errors.Is(err, http.ErrServerClosed) {
+			return fmt.Errorf("serve HTTP while stopping: %w", err)
 		}
 	}
 
+	return nil
+}
+
+func stopHTTPServer(server *http.Server, cancelRequests context.CancelFunc, timeout time.Duration) error {
+	cancelRequests()
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		if closeErr := server.Close(); closeErr != nil && !errors.Is(closeErr, http.ErrServerClosed) {
+			return fmt.Errorf("force HTTP server close after graceful shutdown: %w", closeErr)
+		}
+		slog.Warn("graceful shutdown timed out; remaining connections were closed", "error", err)
+	}
 	return nil
 }
 
