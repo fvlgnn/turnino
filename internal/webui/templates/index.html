@@ -15,7 +15,12 @@
       <h1>{{.Settings.InstallationName}}</h1>
       <p class="lead">{{t .Lang "home.tagline"}}</p>
       <p>{{t .Lang "home.description"}}</p>
-      <p class="home-actions"><a class="button-link" href="/caller">{{t .Lang "caller.open"}}</a><a href="/monitor">{{t .Lang "monitor.open"}}</a><a href="/admin">{{t .Lang "common.administration"}}</a><a href="/about">{{t .Lang "about.link"}}</a></p>
+      <nav class="home-actions" aria-label="{{t .Lang "home.navigation"}}">
+        <a class="button-link home-action" href="/caller">{{t .Lang "caller.open"}}</a>
+        <a class="button-link secondary home-action" href="/monitor">{{t .Lang "monitor.open"}}</a>
+        <a class="button-link secondary home-action" href="/admin">{{t .Lang "common.administration"}}</a>
+        <a class="button-link secondary home-action" href="/about">{{t .Lang "about.link"}}</a>
+      </nav>
     </main>
   </body>
 </html>

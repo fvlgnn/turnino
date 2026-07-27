@@ -22,6 +22,25 @@ main {
 
 a {
   color: #087f5b;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.15em;
+  transition: color 120ms ease;
+}
+
+a:hover {
+  color: #056344;
+  text-decoration-thickness: 0.13em;
+}
+
+a:active {
+  color: #034b34;
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #f59f00;
+  outline-offset: 3px;
 }
 
 .language-switch {
@@ -194,6 +213,10 @@ button {
   font: inherit;
   font-weight: 750;
   cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 80ms ease;
 }
 
 button.secondary {
@@ -206,10 +229,10 @@ button.danger {
 }
 
 .home-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+  margin-top: 1.5rem;
 }
 
 .button-link {
@@ -220,6 +243,55 @@ button.danger {
   color: #fff;
   font-weight: 750;
   text-decoration: none;
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 80ms ease;
+}
+
+.button-link.secondary {
+  background: #e4eee8;
+  color: #15211b;
+}
+
+.home-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.8rem;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+@media (hover: hover) {
+  button:not(:disabled):hover,
+  .button-link:hover {
+    background: #056f50;
+    color: #fff;
+    box-shadow: 0 0.35rem 0.8rem rgb(21 33 27 / 18%);
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+
+  button.secondary:hover {
+    background: #cfdfd6;
+    color: #15211b;
+  }
+
+  .button-link.secondary:hover {
+    background: #cfdfd6;
+    color: #15211b;
+  }
+
+  button.danger:hover {
+    background: #912018;
+  }
+}
+
+button:not(:disabled):active,
+.button-link:active {
+  box-shadow: none;
+  transform: translateY(1px);
 }
 
 .about-main {
@@ -801,6 +873,10 @@ th {
 }
 
 @media (max-width: 40rem) {
+  .home-actions {
+    grid-template-columns: 1fr;
+  }
+
   .topbar-inner {
     gap: 0.75rem;
     padding-inline: 1rem;
@@ -889,6 +965,11 @@ th {
     color: #fff;
   }
 
+  .button-link.secondary {
+    background: #30463a;
+    color: #fff;
+  }
+
   .caller-status.success {
     color: #69dbb4;
   }
@@ -916,5 +997,13 @@ th {
   .alert.error {
     background: #4a1d1a;
     color: #ffd4cf;
+  }
+}
+
+@media (prefers-color-scheme: dark) and (hover: hover) {
+  button.secondary:hover,
+  .button-link.secondary:hover {
+    background: #3d5a4a;
+    color: #fff;
   }
 }

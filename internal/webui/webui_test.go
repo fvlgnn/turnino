@@ -27,6 +27,9 @@ func TestHomePage(t *testing.T) {
 	for _, expected := range []string{
 		"Your turn, made simple.",
 		"Call the next number. Keep every counter, display, and waiting room in sync.",
+		"Operator workstation",
+		"Public monitor",
+		`class="home-actions"`,
 		`href="/caller"`,
 		`href="/about"`,
 		"test-version",
