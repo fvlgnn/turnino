@@ -60,12 +60,13 @@ Expected failures:
 
 - cookie `HttpOnly`;
 - `SameSite=Strict`;
-- `Secure` when Turnino is served through TLS;
 - twelve-hour expiration;
 - session disappears on server restart;
 - every state-changing form requires a session-specific CSRF token.
 
 A missing or incorrect CSRF token produces `403 Forbidden`.
+
+Turnino's embedded listener currently serves HTTP. When a reverse proxy terminates HTTPS, it must prevent clients from reaching the plaintext backend and redirect or disable its HTTP listener. Transport security remains an infrastructure responsibility, as described below.
 
 The administration page can rotate the access key. Rotation invalidates the previous key and all in-memory administrator sessions. If the key is lost, `turnino admin reset --confirm` provides an explicit offline recovery path; see `docs/administration.md`.
 

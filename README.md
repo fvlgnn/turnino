@@ -21,17 +21,12 @@ Turnino follows the KISS principle: one process, one database, a few browser vie
 
 ## Quick start
 
-Go 1.25 or newer is required.
-
-```sh
-make dev
-```
-
-The public server starts without configuration. Initialize administrator access once, while Turnino is stopped:
+Go 1.25 or newer is required. Initialize administrator access once, then start Turnino:
 
 ```sh
 make build
 ./bin/turnino admin init --data-dir ./data
+make dev
 ```
 
 Save the generated access key: it is shown only once. See the [administration guide](docs/administration.md) for Docker setup, key rotation, offline recovery, advanced automation and HTTPS guidance. Data-directory selection and `.env` behavior are covered in the [configuration guide](docs/configuration.md).
@@ -46,7 +41,9 @@ The autonomous live public monitor is available at <http://localhost:8080/monito
 With Docker:
 
 ```sh
-docker compose up --build
+docker compose build
+docker compose run --rm turnino admin init --data-dir /data
+docker compose up -d
 ```
 
 Runtime data, including the automatically migrated `turnino.db` database, is written to `./data` for native development and to the `turnino-data` volume with Compose.
@@ -63,7 +60,7 @@ Backups are consistent SQLite snapshots and may be created while Turnino is runn
 
 ## Why Turnino?
 
-Turnino combines the English word “turn” with the Italian diminutive suffix “-ino”. It describes a small, friendly system that tells people when it is their turn. The name also continues a personal tradition started with Gianino, the author's home automation project.
+Turnino combines the English word "turn" with the Italian diminutive suffix "ino". It describes a small, friendly system that tells people when it is their turn. The name also continues the tradition I started with Gianino, my home automation project, and pays a small tribute to Arduino, the platform that sparked my passion for programming, the maker mindset and the open-source philosophy.
 
 ## Project status
 

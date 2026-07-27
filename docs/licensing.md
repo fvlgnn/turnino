@@ -16,6 +16,6 @@ Practical examples:
 - if that provider runs a modified Turnino, its remote users must be offered the corresponding source of that version;
 - merely using an unmodified public release does not create a requirement to publish unrelated business data or configuration secrets.
 
-The application UI must eventually include a visible source-code link so deployments and downstream modifications can satisfy the network-use provision cleanly.
+The application UI includes a visible source-code link so deployments and downstream modifications can satisfy the network-use provision cleanly.
 
 Third-party assets and dependencies retain their own licenses. This document is a practical summary, not legal advice.

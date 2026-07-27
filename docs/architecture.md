@@ -13,7 +13,7 @@ operator browser -- POST call --> Go HTTP server -- transaction --> SQLite
                                       +-- SSE --> counter display
 ```
 
-Server-rendered HTML provides the initial state. SSE carries one-way live updates; ordinary HTTP POST requests carry commands. Polling may be retained only as a compatibility fallback.
+Server-rendered HTML provides the initial state. SSE carries one-way live updates; ordinary HTTP POST requests carry commands. Turnino does not currently implement a polling fallback.
 
 The call-event endpoint sends a recent-call snapshot from SQLite whenever a monitor connects, followed by live events from an in-memory fan-out broker. The snapshot makes reconnects self-healing; the broker is only a low-latency notification mechanism and never replaces persisted state.
 
@@ -21,7 +21,7 @@ The call-event endpoint sends a recent-call snapshot from SQLite whenever a moni
 
 `/counter-display` reuses the counter token stored by `/caller` when both pages run in the same browser. On a separate device, an administration link supplies the public counter ID once and the browser stores the association locally. Neither mode depends on the host's MAC or IP address. The page filters the public SSE snapshot and live calls in the browser so it shows only that counter's latest number.
 
-## Planned domain
+## Domain
 
 - **Queue** owns a numbering policy and its current sequence.
 - **Counter** identifies a service desk or operator terminal.
@@ -40,7 +40,7 @@ Number allocation and call creation must occur in one database transaction. A co
 - `html/template`, embedded templates and static assets.
 - Embedded JSON translation dictionaries, initially `en` and `it`, with English as the fallback language.
 - Vanilla JavaScript and modern CSS; no SPA toolchain initially.
-- Structured logs to standard output.
+- Structured logs to standard error.
 - Configuration through environment variables and command-line flags.
 
 ## Localization

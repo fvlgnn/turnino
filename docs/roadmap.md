@@ -1,14 +1,14 @@
 # Roadmap
 
-## Phase 0 — Bootstrap (completed)
+## Phase 0 - Bootstrap (completed)
 
 - Repository conventions and documentation
 - Minimal HTTP server, embedded UI, health check and graceful shutdown
 - Native and container development paths
-- CI and tagged multi-architecture releases
+- CI and tagged multi-architecture release workflows
 - Final product-name decision
 
-## Phase 1 — Core queue calling (completed)
+## Phase 1 - Core queue calling (completed)
 
 - [x] SQLite schema and automatic migrations
 - [x] Queue domain and configurable numbering policies
@@ -27,7 +27,7 @@
 - [x] Consistent SQLite backup and call-history export
 - [x] Reproducible demonstration database containing only synthetic data and unusable credentials
 
-## Phase 2 — Adaptation and polish
+## Phase 2 - Adaptation and polish
 
 - Progressive alphanumeric numbering policies for physical ticket dispensers (for example `A00–Z99`)
 - Configurable themes, logo and banner
@@ -35,11 +35,11 @@
 - Backup download from the administration UI, retention policy and filtered exports
 - Optional browser speech synthesis
 - Installable operator PWA
-- Accessibility and kiosk-mode documentation
+- Accessibility review and kiosk-mode refinements
 
 ## Future phases, only with validated demand
 
-- Setting (themes, logo, banner, volumes, etc.)
+- Additional display and audio settings
 - Ticket issuing and QR codes
 - Priority and transfer workflows
 - Multiple services per counter

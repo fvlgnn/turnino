@@ -253,7 +253,7 @@ I browser impediscono normalmente la riproduzione audio automatica e l'ingresso 
 Turnino separa quindi due viste:
 
 - `/monitor` è la vista di produzione, senza controlli; prova ad attivare automaticamente l'`AudioContext` e si affida al browser avviato in modalità kiosk per fullscreen e autoplay;
-- `/monitor?test=1` mostra “Abilita suono”, “Schermo intero” e il collegamento al Caller come strumenti di sviluppo.
+- `/monitor?test=1` mostra "Abilita suono", "Schermo intero" e il collegamento al Caller come strumenti di sviluppo.
 
 Se `Settings.SoundEnabled` è disabilitato, Turnino non prova ad armare l'audio. I launcher kiosk forniti aggiungono `--autoplay-policy=no-user-gesture-required`, mentre il fullscreen viene ottenuto all'avvio del browser e non richiesto dalla pagina.
 
@@ -276,14 +276,14 @@ Apri:
 http://localhost:8080/monitor?test=1
 ```
 
-La modalità test aggiunge i controlli audio/fullscreen e “Apri Caller per il test”. Il link apre una seconda scheda sullo stesso origin. Il `localStorage` del token è condiviso tra le schede dello stesso browser.
+La modalità test aggiunge i controlli audio/fullscreen e "Apri Caller per il test". Il link apre una seconda scheda sullo stesso origin. Il `localStorage` del token è condiviso tra le schede dello stesso browser.
 
 Per osservare entrambi contemporaneamente:
 
 1. trascina una scheda in una seconda finestra;
 2. affianca monitor e Caller;
-3. sul monitor premi “Abilita suono”;
-4. dal Caller premi “Chiama prossimo”.
+3. sul monitor premi "Abilita suono";
+4. dal Caller premi "Chiama prossimo".
 
 Il monitor deve aggiornarsi senza refresh, evidenziare la chiamata e riprodurre il tono.
 
@@ -305,7 +305,7 @@ La richiesta deve restare `pending`. Nel pannello EventStream o Response devono 
 
 1. lascia aperto il monitor;
 2. riavvia Turnino;
-3. osserva lo stato passare a “Connessione…”;
+3. osserva lo stato passare a "Connessione...";
 4. dopo la riconnessione verifica che lo snapshot ripristini lo storico.
 
 Non è necessario ricaricare la pagina: `EventSource` ritenta automaticamente usando il valore `retry`.

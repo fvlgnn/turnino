@@ -9,7 +9,7 @@
 - [x] Proteggere `main` e richiedere CI verde per le pull request.
 - [ ] Rendere pubblico il package GHCR dopo la prima pubblicazione.
 
-## Fase 1 — Core queue calling
+## Fase 1 - Core queue calling
 
 - [x] Scegliere e documentare il driver SQLite pure Go.
 - [x] Creare schema e migrazioni automatiche.
@@ -35,7 +35,7 @@
 - [x] Monitor pubblico con lista (font dei numeri progressivamente più piccolo).
 - [x] Gestire audio autonomo tramite launcher kiosk, mantenendo il pulsante come fallback nella modalità test.
 
-## Fase 2 — Qualità e rilascio
+## Fase 2 - Qualità e rilascio
 
 - [ ] Aggiungere scansione vulnerabilità e SBOM alle release.
 - [ ] Valutare il pin delle GitHub Actions a commit SHA.
@@ -55,4 +55,4 @@
 
 - [ ] Vedi se possibile migliorare facilità di gestione caller (per registrazione, in una situazione reale potrebbe essere complicato registrare con token lo sportello)
 - [ ] Valutare un fallback polling solo se emerge la necessità di supportare browser senza `EventSource`; SSE resta il trasporto principale.
-- [ ] Variabile TURNINO_LOG_LEVEL
+- [ ] Valutare livelli di log configurabili solo quando emergerà un caso d'uso concreto.

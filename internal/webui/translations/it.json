@@ -81,7 +81,7 @@
   "admin.invalid_number_policy": "La configurazione della numerazione contiene valori non validi.",
   "admin.invalid_counter_id": "ID sportello non valido.",
   "admin.invalid_queue_id": "ID coda non valido.",
-  "admin.secret_title": "Token dello sportello — copialo ora.",
+  "admin.secret_title": "Token dello sportello - copialo ora.",
   "admin.secret_help": "Non verrà mostrato di nuovo.",
   "settings.title": "Impostazioni installazione",
   "settings.installation_name": "Nome installazione",

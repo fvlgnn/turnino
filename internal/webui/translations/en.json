@@ -81,7 +81,7 @@
   "admin.invalid_number_policy": "Number policy contains invalid values.",
   "admin.invalid_counter_id": "Invalid counter ID.",
   "admin.invalid_queue_id": "Invalid queue ID.",
-  "admin.secret_title": "Counter token — copy it now.",
+  "admin.secret_title": "Counter token - copy it now.",
   "admin.secret_help": "It will not be shown again.",
   "settings.title": "Installation settings",
   "settings.installation_name": "Installation name",

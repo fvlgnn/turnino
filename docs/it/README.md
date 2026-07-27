@@ -1,18 +1,41 @@
-# Turnino — note italiane
+# Turnino in italiano
 
-Turnino è la riscrittura moderna di un piccolo sistema eliminacode nato per funzionare anche su Raspberry Pi. L'obiettivo resta deliberatamente semplice: un server, terminali operatore nel browser, monitor pubblico, display dei singoli sportelli e configurazione essenziale.
+Turnino è un sistema eliminacode leggero, open source e self-hosted. Nasce dalla riscrittura moderna di un'applicazione che per anni ha funzionato su hardware modesto, incluso Raspberry Pi, mantenendone l'idea originale: un solo server, postazioni operatore nel browser, un monitor pubblico, display dedicati agli sportelli e un'amministrazione essenziale.
 
-Stack previsto:
+## Funzionalità
 
-- Go;
-- SQLite;
-- HTML generato dal server;
-- Server-Sent Events;
-- JavaScript minimale;
-- singolo binario e immagine container multi-architettura.
+La prima versione comprende:
 
-La [roadmap](../roadmap.md), l'[architettura](../architecture.md) e la [guida allo sviluppo](../development.md) sono inizialmente mantenute in inglese per rendere il progetto accessibile a una comunità più ampia. L'interfaccia applicativa sarà disponibile almeno in italiano e inglese.
-
-Il nome unisce l'inglese “turn” al diminutivo italiano “-ino”: un sistema piccolo e amichevole che comunica quando è arrivato il proprio turno. Continua inoltre la tradizione personale iniziata con Gianino, il progetto di domotica casalinga dell'autore.
+- code con prefisso, intervallo e numerazione configurabili;
+- chiamata automatica del numero successivo;
+- chiamata manuale per code collegate a dispenser cartacei;
+- ripetizione dell'ultima chiamata;
+- postazione operatore, monitor pubblico e display del singolo sportello;
+- aggiornamenti in tempo reale tramite Server-Sent Events;
+- amministrazione protetta da una chiave di accesso;
+- interfaccia in italiano e inglese;
+- persistenza SQLite, backup ed esportazione CSV;
+- esecuzione nativa, con Docker e su Raspberry Pi;
+- modalità kiosk per Microsoft Edge e Chromium.
 
 Turnino segue il principio KISS: un processo, un database, poche viste nel browser e nessuna infrastruttura superflua.
+
+## Documentazione
+
+La documentazione tecnica principale è mantenuta in inglese per rendere il progetto accessibile a una comunità più ampia:
+
+- [avvio e panoramica](../../README.md);
+- [configurazione](../configuration.md);
+- [amministrazione e recupero accesso](../administration.md);
+- [sviluppo](../development.md);
+- [architettura](../architecture.md);
+- [installazione kiosk](../kiosk.md);
+- [sicurezza](../security.md);
+- [risoluzione dei problemi](../troubleshooting.md);
+- [roadmap](../roadmap.md).
+
+L'interfaccia applicativa e i messaggi rivolti agli utenti sono disponibili sia in italiano sia in inglese.
+
+## Perché Turnino?
+
+Il nome unisce la parola inglese "turn" al diminutivo italiano "ino": un sistema piccolo e amichevole che comunica quando è arrivato il proprio turno. Il nome continua anche la tradizione iniziata con Gianino, il mio progetto di domotica domestica, e vuole essere un piccolo omaggio ad Arduino, la piattaforma che mi ha fatto appassionare alla programmazione, alla mentalità maker e alla filosofia open source.

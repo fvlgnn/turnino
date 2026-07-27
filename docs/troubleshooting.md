@@ -20,7 +20,7 @@ docker compose run --rm turnino admin reset --data-dir /data --confirm
 docker compose start turnino
 ```
 
-Store the printed token in a password manager and update the local, ignored `.env` used by REST Client. The command requires `--confirm` to reduce accidental resets. It must not be run while the server is active.
+Store the printed access key in a password manager and update the local, ignored `.env` used by REST Client. The command requires `--confirm` to reduce accidental resets. It must not be run while the server is active.
 
 ## Restoring a backup
 

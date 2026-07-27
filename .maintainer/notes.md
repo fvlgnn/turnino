@@ -37,7 +37,7 @@ Con Turnino fermo:
 make build
 ./bin/turnino admin init --data-dir ./data
 # con Go
-go run admin init --data-dir ./data
+go run ./cmd/turnino admin init --data-dir ./data
 ```
 
 Conservare la chiave mostrata una sola volta in un password manager. Se viene persa, fermare Turnino e usare il recupero offline esplicito:
@@ -45,7 +45,7 @@ Conservare la chiave mostrata una sola volta in un password manager. Se viene pe
 ```sh
 ./bin/turnino admin reset --data-dir ./data --confirm
 # con Go
-go run admin reset --data-dir ./data --confirm
+go run ./cmd/turnino admin reset --data-dir ./data --confirm
 ```
 
 Con Docker usare rispettivamente:
@@ -61,16 +61,13 @@ docker compose up -d
 
 ## Provare le API con REST Client
 
-Per provare gli endpoint amministrativi con REST Client, copiare `.env.example` in `.env` e inserire come `TURNINO_ADMIN_TOKEN` la chiave generata da `admin init`. Il file `.env` è escluso da Git. Per esportarne i valori e avviare Turnino:
+Per provare gli endpoint amministrativi con REST Client, copiare `.env.example` in `.env` e inserire come `TURNINO_ADMIN_TOKEN` la chiave generata da `admin init`. Il file `.env` è escluso da Git. L'estensione REST Client legge direttamente il file, quindi non serve esportare la chiave nel processo Turnino:
 
 ```sh
-set -a
-. ./.env
-set +a
 make dev
 ```
 
-La variabile in questo caso serve al client REST e non deve necessariamente essere esportata nel processo Turnino. Turnino salva soltanto l'hash SHA-256 della chiave nel database.
+La variabile in questo caso serve soltanto al client REST. Turnino salva soltanto l'hash SHA-256 della chiave nel database.
 
 Il file `api/turnino.rest` è compatibile con l'estensione VS Code `humao.rest-client` e legge `TURNINO_ADMIN_TOKEN` dal file `.env` mediante `{{$dotenv TURNINO_ADMIN_TOKEN}}`. Aprire il file ed eseguire nell'ordine:
 
@@ -80,7 +77,7 @@ Il file `api/turnino.rest` è compatibile con l'estensione VS Code `humao.rest-c
 
 REST Client recupera automaticamente dalle prime due risposte l'ID della coda e il token dello sportello. Il token viene mostrato in chiaro soltanto durante la registrazione; nel database ne viene conservato l'hash SHA-256.
 
-Gli endpoint sotto `/api/v1/admin` richiedono il token amministrativo. L'endpoint `calls/next` richiede invece il token dello sportello restituito al momento della registrazione. Gli esempi successivi mostrano anche rotazione, revoca e riattivazione; una riattivazione genera sempre un nuovo token.
+Gli endpoint sotto `/api/v1/admin` richiedono la chiave di accesso amministrativa come Bearer token. L'endpoint `calls/next` richiede invece il token dello sportello restituito al momento della registrazione. Gli esempi successivi mostrano anche rotazione, revoca e riattivazione; una riattivazione genera sempre un nuovo token.
 
 Per prove legate a un database già esistente usare `api/turnino.local.rest`, escluso da Git tramite `/api/*.local.rest`. Modificare all'inizio del file i valori locali:
 
@@ -105,7 +102,7 @@ La richiamata usa `POST /api/v1/queues/{id}/calls/recall`: ripete l'ultima chiam
 
 Aprire <http://localhost:8080/counter-display> dallo stesso browser per provare il display dedicato: usa automaticamente il token del Caller, ricava l'identità dello sportello da `/api/v1/counters/me` e filtra snapshot ed eventi SSE per `counter_id`. Per simulare operatore e display contemporaneamente, tenere Caller e display in due schede affiancate.
 
-Su un browser separato, accedere all'amministrazione da quel dispositivo e premere “Configura display” sullo sportello desiderato. Il link `?counter=<id>` salva l'associazione in `localStorage` con chiave `turnino.displayCounter` e ripulisce subito l'URL. Per cambiare associazione basta aprire il link di un altro sportello. I launcher kiosk dedicati sono descritti in `docs/kiosk.md`.
+Su un browser separato, accedere all'amministrazione da quel dispositivo e premere "Configura display" sullo sportello desiderato. Il link `?counter=<id>` salva l'associazione in `localStorage` con chiave `turnino.displayCounter` e ripulisce subito l'URL. Per cambiare associazione basta aprire il link di un altro sportello. I launcher kiosk dedicati sono descritti in `docs/kiosk.md`.
 
 Per studiare e provare monitor pubblico e Server-Sent Events, vedere `.maintainer/sse-monitor-guide.md`. La modalità <http://localhost:8080/monitor?test=1> permette di aprire il Caller in una seconda scheda dello stesso browser.
 
@@ -146,7 +143,7 @@ docker compose run --rm turnino admin reset --data-dir /data --confirm
 docker compose start turnino
 ```
 
-Il comando sostituisce la credenziale amministrativa e stampa il nuovo token una sola volta. Conservarlo e aggiornare il `.env` locale. Non eseguire il reset mentre Turnino è attivo.
+Il comando sostituisce la chiave di accesso amministrativa e stampa la nuova chiave una sola volta. Conservarla e aggiornare il `.env` locale usato da REST Client. Non eseguire il reset mentre Turnino è attivo.
 
 ## Backup, export e dati demo
 
@@ -340,7 +337,6 @@ Variabili disponibili in `.env.example`:
 ```text
 TURNINO_ADDR=:8080
 TURNINO_DATA_DIR=./data
-TURNINO_LOG_LEVEL=info
 TURNINO_ADMIN_TOKEN=
 ```
 
