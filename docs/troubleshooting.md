@@ -1,8 +1,8 @@
 # Troubleshooting
 
-## Resetting a lost administrator credential
+## Resetting a lost administrator access key
 
-The reset command intentionally works offline and replaces the existing administrator credential. It prints the new token once.
+The reset command intentionally works offline and replaces the existing administrator access key. It prints the new key once.
 
 Native development:
 

@@ -29,6 +29,7 @@ const projectSourceURL = "https://github.com/fvlgnn/turnino"
 type Store interface {
 	AdminConfigured(context.Context) (bool, error)
 	ValidateAdminToken(context.Context, []byte) (bool, error)
+	ResetAdmin(context.Context, []byte) error
 	GetSettings(context.Context) (domain.Settings, error)
 	UpdateSettings(context.Context, domain.Settings) (domain.Settings, error)
 	ListQueues(context.Context) ([]domain.Queue, error)
@@ -61,20 +62,21 @@ type sessionStore struct {
 }
 
 type pageData struct {
-	Version         string
-	Lang            string
-	AdminConfigured bool
-	CSRFToken       string
-	Error           string
-	Notice          string
-	Queues          []domain.Queue
-	Counters        []domain.Counter
-	Settings        domain.Settings
-	Calls           []domain.CallRecord
-	TestMode        bool
-	NewCounterToken string
-	DisplayCounter  domain.Counter
-	SourceURL       string
+	Version           string
+	Lang              string
+	AdminConfigured   bool
+	CSRFToken         string
+	Error             string
+	Notice            string
+	Queues            []domain.Queue
+	Counters          []domain.Counter
+	Settings          domain.Settings
+	Calls             []domain.CallRecord
+	TestMode          bool
+	NewCounterToken   string
+	NewAdminAccessKey string
+	DisplayCounter    domain.Counter
+	SourceURL         string
 }
 
 func New(version string, store Store) (http.Handler, error) {
@@ -113,6 +115,7 @@ func New(version string, store Store) (http.Handler, error) {
 	mux.HandleFunc("GET /admin", application.admin)
 	mux.HandleFunc("POST /admin/login", application.login)
 	mux.HandleFunc("POST /admin/logout", application.logout)
+	mux.HandleFunc("POST /admin/access-key/rotate", application.rotateAdminAccessKey)
 	mux.HandleFunc("POST /admin/settings", application.updateSettings)
 	mux.HandleFunc("POST /admin/queues", application.createQueue)
 	mux.HandleFunc("POST /admin/queues/{queueID}/custom-calls", application.setQueueCustomCalls)
@@ -244,6 +247,36 @@ func (a *app) logout(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &http.Cookie{Name: "turnino_admin", Path: "/admin", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteStrictMode})
 	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+}
+
+func (a *app) rotateAdminAccessKey(w http.ResponseWriter, r *http.Request) {
+	_, ok := a.authorizeForm(w, r)
+	if !ok {
+		return
+	}
+	if r.PostFormValue("confirm_rotation") != "on" {
+		a.redirectAdminError(w, r, a.message(r, "admin.access_key_confirm_required"))
+		return
+	}
+	accessKey, err := credential.Generate()
+	if err != nil {
+		http.Error(w, "Could not generate administrator access key", http.StatusInternalServerError)
+		return
+	}
+	keyHash := credential.Hash(accessKey)
+	if err := a.store.ResetAdmin(r.Context(), keyHash[:]); err != nil {
+		http.Error(w, "Could not rotate administrator access key", http.StatusInternalServerError)
+		return
+	}
+	a.sessions.clear()
+	http.SetCookie(w, &http.Cookie{
+		Name: "turnino_admin", Path: "/admin", MaxAge: -1, HttpOnly: true,
+		Secure: r.TLS != nil, SameSite: http.SameSiteStrictMode,
+	})
+	w.Header().Set("Cache-Control", "no-store")
+	data := a.page(r)
+	data.NewAdminAccessKey = accessKey
+	a.render(w, "admin-access-key.html", data)
 }
 
 func (a *app) updateSettings(w http.ResponseWriter, r *http.Request) {
@@ -545,6 +578,12 @@ func (s *sessionStore) delete(id string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.sessions, id)
+}
+
+func (s *sessionStore) clear() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	clear(s.sessions)
 }
 
 func parseID(value string) (int64, error) {

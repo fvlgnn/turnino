@@ -16,11 +16,11 @@ make docker-build # build the local container
 docker compose up --build
 ```
 
-Configuration is documented in `.env.example`. Go does not load `.env` itself; export the variables in your shell or let an editor/task runner load them.
+Configuration is documented in `.env.example` and `docs/configuration.md`. Go does not load `.env` itself; export the variables in your shell or let an editor/task runner load them. For example, use `TURNINO_DATA_DIR=./data-dev make dev` for an isolated development database.
 
 Use `/monitor?test=1` for browser-side monitor development. The production `/monitor` deliberately hides interactive controls; supervised Windows and Raspberry Pi kiosk launchers are documented in `docs/kiosk.md`.
 
-For a new database, generate a random administration token, set it as `TURNINO_ADMIN_TOKEN`, and start Turnino once. The credential is bootstrapped only when none exists and cannot be overwritten by changing the environment variable. Keep the original token outside the repository; administration requests use it as a Bearer token.
+For a new database, run `make build` and then `./bin/turnino admin init --data-dir ./data` while the server is stopped. Save the access key shown once. `TURNINO_ADMIN_TOKEN` is retained as an advanced automated-bootstrap option. See `docs/administration.md` for setup, rotation and recovery.
 
 ## Translations
 

@@ -1,0 +1,24 @@
+{{define "admin-access-key.html"}}
+<!doctype html>
+<html lang="{{.Lang}}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>{{t .Lang "admin.access_key_rotated"}} · Turnino</title>
+    <link rel="stylesheet" href="/static/app.css">
+  </head>
+  <body>
+    <main class="panel narrow">
+      <a class="brand" href="/">Turnino</a>
+      <h1 class="page-title">{{t .Lang "admin.access_key_rotated"}}</h1>
+      <section class="alert secret">
+        <strong>{{t .Lang "admin.access_key_copy"}}</strong>
+        <code>{{.NewAdminAccessKey}}</code>
+        <span>{{t .Lang "admin.access_key_rotated_help"}}</span>
+      </section>
+      <a class="button-link" href="/admin">{{t .Lang "admin.sign_in_again"}}</a>
+    </main>
+  </body>
+</html>
+{{end}}

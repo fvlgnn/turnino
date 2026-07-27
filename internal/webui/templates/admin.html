@@ -115,6 +115,16 @@
           </form>
         </article>
       </section>
+
+      <details class="panel admin-security">
+        <summary>{{t .Lang "admin.security_title"}}</summary>
+        <p>{{t .Lang "admin.access_key_rotation_help"}}</p>
+        <form method="post" action="/admin/access-key/rotate" class="stack">
+          <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+          <label class="checkbox"><input name="confirm_rotation" type="checkbox" required> {{t .Lang "admin.access_key_rotation_confirm"}}</label>
+          <button class="danger" type="submit">{{t .Lang "admin.access_key_rotate"}}</button>
+        </form>
+      </details>
     </main>
   </body>
 </html>

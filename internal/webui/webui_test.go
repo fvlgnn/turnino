@@ -272,8 +272,16 @@ func TestLanguageSelectionPersistsCookie(t *testing.T) {
 	request.AddCookie(cookies[0])
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
-	if !strings.Contains(response.Body.String(), "non è configurata") {
+	if !strings.Contains(response.Body.String(), "non è ancora stato inizializzato") {
 		t.Fatal("language cookie did not select Italian")
+	}
+	for _, expected := range []string{
+		"./turnino admin init --data-dir ./data",
+		"docker compose run --rm turnino admin init --data-dir /data",
+	} {
+		if !strings.Contains(response.Body.String(), expected) {
+			t.Errorf("unconfigured administration page does not contain %q", expected)
+		}
 	}
 }
 
@@ -394,6 +402,36 @@ func TestAdminLoginCreateQueueAndCSRF(t *testing.T) {
 	handler.ServeHTTP(savedDashboardResponse, savedDashboard)
 	if !strings.Contains(savedDashboardResponse.Body.String(), "Impostazioni salvate.") {
 		t.Fatal("saved settings confirmation is missing")
+	}
+
+	rotate := formRequest(http.MethodPost, "/admin/access-key/rotate", url.Values{
+		"csrf_token": {csrfMatch[1]}, "confirm_rotation": {"on"},
+	}, cookies[0])
+	rotateResponse := httptest.NewRecorder()
+	handler.ServeHTTP(rotateResponse, rotate)
+	if rotateResponse.Code != http.StatusOK {
+		t.Fatalf("rotate admin access key status = %d, want %d", rotateResponse.Code, http.StatusOK)
+	}
+	keyMatch := regexp.MustCompile(`<code>([^<]+)</code>`).FindStringSubmatch(rotateResponse.Body.String())
+	if len(keyMatch) != 2 {
+		t.Fatal("rotated administrator access key is not shown")
+	}
+	newKeyHash := sha256.Sum256([]byte(keyMatch[1]))
+	valid, err := store.ValidateAdminToken(context.Background(), newKeyHash[:])
+	if err != nil || !valid {
+		t.Fatalf("new administrator access key validation = %v, %v; want true, nil", valid, err)
+	}
+	valid, err = store.ValidateAdminToken(context.Background(), tokenHash[:])
+	if err != nil || valid {
+		t.Fatalf("old administrator access key validation = %v, %v; want false, nil", valid, err)
+	}
+
+	oldSession := httptest.NewRequest(http.MethodGet, "/admin", nil)
+	oldSession.AddCookie(cookies[0])
+	oldSessionResponse := httptest.NewRecorder()
+	handler.ServeHTTP(oldSessionResponse, oldSession)
+	if !strings.Contains(oldSessionResponse.Body.String(), "Chiave di accesso amministrativa") {
+		t.Fatal("rotation did not invalidate the existing administrator session")
 	}
 }
 

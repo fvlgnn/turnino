@@ -94,7 +94,7 @@ func run() error {
 		return fmt.Errorf("check administrator configuration: %w", err)
 	}
 	if !adminConfigured {
-		slog.Warn("administrator is not configured; set TURNINO_ADMIN_TOKEN and restart to enable administration APIs")
+		slog.Warn("administrator is not configured; run 'turnino admin init' before enabling administration")
 	}
 
 	ui, err := webui.New(version, db)
@@ -169,36 +169,93 @@ func stopHTTPServer(server *http.Server, cancelRequests context.CancelFunc, time
 }
 
 func runAdminCommand(args []string, output io.Writer) error {
-	if len(args) == 0 || args[0] != "reset" {
-		return errors.New("usage: turnino admin reset --data-dir PATH --confirm")
+	if len(args) == 0 {
+		return errors.New("usage: turnino admin <init|reset> [options]")
 	}
+	switch args[0] {
+	case "init":
+		return runAdminInit(args[1:], output)
+	case "reset":
+		return runAdminReset(args[1:], output)
+	default:
+		return errors.New("usage: turnino admin <init|reset> [options]")
+	}
+}
+
+func runAdminInit(args []string, output io.Writer) error {
+	flags := flag.NewFlagSet("admin init", flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	dataDir := flags.String("data-dir", envOr("TURNINO_DATA_DIR", "./data"), "persistent data directory")
+	if err := flags.Parse(args); err != nil {
+		return fmt.Errorf("parse admin init options: %w", err)
+	}
+	db, err := openAdminStore(*dataDir)
+	if err != nil {
+		return fmt.Errorf("open database for admin initialization: %w", err)
+	}
+	defer db.Close()
+	configured, err := db.AdminConfigured(context.Background())
+	if err != nil {
+		return fmt.Errorf("check administrator configuration: %w", err)
+	}
+	if configured {
+		return errors.New("administrator access is already configured; use 'turnino admin reset --confirm' for offline recovery")
+	}
+	accessKey, err := credential.Generate()
+	if err != nil {
+		return fmt.Errorf("generate administrator access key: %w", err)
+	}
+	keyHash := credential.Hash(accessKey)
+	created, err := db.BootstrapAdmin(context.Background(), keyHash[:])
+	if err != nil {
+		return fmt.Errorf("initialize administrator access: %w", err)
+	}
+	if !created {
+		return errors.New("administrator access was configured concurrently; no changes were made")
+	}
+	printAdminAccessKey(output, "Administrator access configured successfully.", accessKey)
+	return nil
+}
+
+func runAdminReset(args []string, output io.Writer) error {
 	flags := flag.NewFlagSet("admin reset", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	dataDir := flags.String("data-dir", envOr("TURNINO_DATA_DIR", "./data"), "persistent data directory")
-	confirm := flags.Bool("confirm", false, "confirm the offline credential reset")
-	if err := flags.Parse(args[1:]); err != nil {
+	confirm := flags.Bool("confirm", false, "confirm the offline access-key reset")
+	if err := flags.Parse(args); err != nil {
 		return fmt.Errorf("parse admin reset options: %w", err)
 	}
 	if !*confirm {
 		return errors.New("admin reset requires --confirm; stop Turnino before running it")
 	}
-	db, err := sqlitestore.Open(context.Background(), filepath.Join(*dataDir, "turnino.db"))
+	db, err := openAdminStore(*dataDir)
 	if err != nil {
 		return fmt.Errorf("open database for offline admin reset: %w", err)
 	}
 	defer db.Close()
-	token, err := credential.Generate()
+	accessKey, err := credential.Generate()
 	if err != nil {
-		return fmt.Errorf("generate administrator credential: %w", err)
+		return fmt.Errorf("generate administrator access key: %w", err)
 	}
-	tokenHash := credential.Hash(token)
-	if err := db.ResetAdmin(context.Background(), tokenHash[:]); err != nil {
+	keyHash := credential.Hash(accessKey)
+	if err := db.ResetAdmin(context.Background(), keyHash[:]); err != nil {
 		return err
 	}
-	fmt.Fprintln(output, "Administrator credential reset successfully.")
-	fmt.Fprintln(output, "Store this token securely; it will not be shown again:")
-	fmt.Fprintln(output, token)
+	printAdminAccessKey(output, "Administrator access key reset successfully.", accessKey)
 	return nil
+}
+
+func openAdminStore(dataDir string) (*sqlitestore.Store, error) {
+	if err := os.MkdirAll(dataDir, 0o750); err != nil {
+		return nil, fmt.Errorf("create data directory: %w", err)
+	}
+	return sqlitestore.Open(context.Background(), filepath.Join(dataDir, "turnino.db"))
+}
+
+func printAdminAccessKey(output io.Writer, successMessage, accessKey string) {
+	fmt.Fprintln(output, successMessage)
+	fmt.Fprintln(output, "Store this access key securely; it will not be shown again:")
+	fmt.Fprintln(output, accessKey)
 }
 
 func envOr(name, fallback string) string {

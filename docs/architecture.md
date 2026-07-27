@@ -63,7 +63,7 @@ Installation settings use one typed row rather than an unrestricted key-value ta
 
 ## Authentication
 
-Turnino has one installation administrator and does not implement users or roles. On the first startup, `TURNINO_ADMIN_TOKEN` bootstraps a write-once credential whose SHA-256 hash is persisted; later environment values cannot silently replace it. Administrative endpoints live under `/api/v1/admin`.
+Turnino has one installation administrator and does not implement users or roles. `turnino admin init` generates the initial access key and persists only its SHA-256 hash. `TURNINO_ADMIN_TOKEN` provides an advanced write-once bootstrap for automated deployments; later environment values cannot silently replace an existing key. Administrative endpoints live under `/api/v1/admin`.
 
 Each counter receives a separate random token. Counter tokens can call queues but cannot administer the installation. Tokens are returned only when created or rotated, and only their SHA-256 hashes are stored.
 
@@ -73,6 +73,6 @@ Bearer tokens must be used only on a trusted local network or behind HTTPS. Turn
 
 The location and troubleshooting boundary of network, HTTP-header, administrator, CSRF, counter-token and kiosk controls is documented in `docs/security.md`.
 
-The administration UI exchanges the administrator token for a random, twelve-hour in-memory session. Its cookie is `HttpOnly` and `SameSite=Strict`; state-changing forms also require a session-specific CSRF token. Sessions intentionally disappear when Turnino restarts.
+The administration UI exchanges the administrator access key for a random, twelve-hour in-memory session. Its cookie is `HttpOnly` and `SameSite=Strict`; state-changing forms also require a session-specific CSRF token. Sessions intentionally disappear when Turnino restarts. Guided key rotation invalidates the old key and all sessions.
 
-If the administrator token is lost, the server must be stopped and the explicit `turnino admin reset --confirm` command run against its data directory. There are no recovery questions, default passwords, or network reset endpoints.
+If the administrator access key is lost, the server must be stopped and the explicit `turnino admin reset --confirm` command run against its data directory. There are no recovery questions, default passwords, or network reset endpoints.

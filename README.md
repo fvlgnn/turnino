@@ -27,11 +27,18 @@ Go 1.25 or newer is required.
 make dev
 ```
 
-The public server starts without configuration. To bootstrap the administration API on a new database, set a random `TURNINO_ADMIN_TOKEN` of at least 20 characters for the first startup; Turnino persists only its SHA-256 hash. See `.env.example` and the development guide for configuration details.
+The public server starts without configuration. Initialize administrator access once, while Turnino is stopped:
+
+```sh
+make build
+./bin/turnino admin init --data-dir ./data
+```
+
+Save the generated access key: it is shown only once. See the [administration guide](docs/administration.md) for Docker setup, key rotation, offline recovery, advanced automation and HTTPS guidance. Data-directory selection and `.env` behavior are covered in the [configuration guide](docs/configuration.md).
 
 Open <http://localhost:8080>. The health endpoint is available at <http://localhost:8080/healthz>.
 Project, license and source information is available at <http://localhost:8080/about>.
-The administration interface is available at <http://localhost:8080/admin> after the administrator credential has been bootstrapped.
+The administration interface is available at <http://localhost:8080/admin> after administrator access has been initialized.
 The operator interface is available at <http://localhost:8080/caller>. Paste the token issued when its counter was registered; the token remains in that browser and authenticates automatic calls and recalls. Queues backed by a separate manual paper dispenser can explicitly enable validated custom-number calls from the administration page.
 The dedicated counter display is available at <http://localhost:8080/counter-display>. Open it from the Caller to reuse the counter token saved in the same browser; it then shows only calls made by that counter.
 The autonomous live public monitor is available at <http://localhost:8080/monitor>. During development, open `/monitor?test=1` to expose sound/fullscreen controls and launch a Caller tab from the same browser. See the [kiosk deployment guide](docs/kiosk.md) for Windows Edge and Raspberry Pi Chromium autostart.
@@ -60,7 +67,7 @@ Turnino combines the English word “turn” with the Italian diminutive suffix 
 
 ## Project status
 
-See the [roadmap](docs/roadmap.md), [architecture](docs/architecture.md), [development guide](docs/development.md), [kiosk deployment guide](docs/kiosk.md), [security model](docs/security.md), and [troubleshooting guide](docs/troubleshooting.md). Italian project notes are available in [docs/it/README.md](docs/it/README.md).
+See the [roadmap](docs/roadmap.md), [architecture](docs/architecture.md), [development guide](docs/development.md), [configuration guide](docs/configuration.md), [administration guide](docs/administration.md), [kiosk deployment guide](docs/kiosk.md), [security model](docs/security.md), and [troubleshooting guide](docs/troubleshooting.md). Italian project notes are available in [docs/it/README.md](docs/it/README.md).
 
 ## License
 

@@ -56,7 +56,7 @@ Expected failures:
 
 ## Administration browser UI
 
-`internal/webui/webui.go` exchanges the administrator token for a random in-memory session:
+`internal/webui/webui.go` exchanges the administrator access key for a random in-memory session:
 
 - cookie `HttpOnly`;
 - `SameSite=Strict`;
@@ -66,6 +66,14 @@ Expected failures:
 - every state-changing form requires a session-specific CSRF token.
 
 A missing or incorrect CSRF token produces `403 Forbidden`.
+
+The administration page can rotate the access key. Rotation invalidates the previous key and all in-memory administrator sessions. If the key is lost, `turnino admin reset --confirm` provides an explicit offline recovery path; see `docs/administration.md`.
+
+## Plain HTTP and the infrastructure boundary
+
+HTTP provides no transport encryption. Administrator and counter keys, cookies and displayed data can be intercepted on an untrusted plaintext network. Use HTTP only on a deliberately trusted, isolated LAN. Otherwise expose Turnino through HTTPS, redirect or block HTTP, and prevent direct access to the plaintext backend.
+
+Turnino is responsible for application authentication, authorization, CSRF protection and storing only credential hashes. The deployment owner is responsible for TLS termination, certificates, reverse-proxy policy, firewalls, VLANs, Wi-Fi isolation and routing. Plaintext exposure is an infrastructure configuration risk, not an application-authentication defect.
 
 ## Counter and Caller authentication
 
@@ -139,4 +147,4 @@ Do not globally disable PowerShell execution policy merely to run Turnino.
 | Edge is not fullscreen | kiosk launcher arguments or Edge policy |
 | PowerShell trust prompt | UNC/zone marker and execution policy |
 
-Bearer tokens must not be sent over an untrusted plaintext network. Use HTTPS through a reverse proxy when Turnino is reachable beyond a trusted LAN.
+Access keys and Bearer tokens must not be sent over an untrusted plaintext network. Use HTTPS through a reverse proxy when Turnino is reachable beyond a trusted LAN.

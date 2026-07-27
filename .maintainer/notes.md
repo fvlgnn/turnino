@@ -19,19 +19,58 @@ docker compose up --build
 Applicazione: <http://localhost:8080>
 Health check: <http://localhost:8080/healthz>
 
-## Provare le API con REST Client
-
-Al primo avvio copiare `.env.example` in `.env`, generare una credenziale amministrativa lunga e inserirla come `TURNINO_ADMIN_TOKEN`. Il file `.env` è escluso da Git. Per esportarne i valori e avviare Turnino:
+`.env` non viene caricato automaticamente da Go o dal `Makefile`. Per usare una directory dati diversa:
 
 ```sh
-openssl rand -base64 32
+TURNINO_DATA_DIR=./data-dev make dev
+./bin/turnino --data-dir ./data-dev
+go run ./cmd/turnino --data-dir ./data-dev
+```
+
+Per caricare tutto `.env` nella shell usare `set -a; . ./.env; set +a`. Docker Compose legge `.env`, ma il Compose standard usa sempre `/data` nel container e il volume nominato `turnino-data`. Gli esempi per volume separato e bind mount sono in `docs/configuration.md`.
+
+## Inizializzare l'amministrazione
+
+Con Turnino fermo:
+
+```sh
+make build
+./bin/turnino admin init --data-dir ./data
+# con Go
+go run admin init --data-dir ./data
+```
+
+Conservare la chiave mostrata una sola volta in un password manager. Se viene persa, fermare Turnino e usare il recupero offline esplicito:
+
+```sh
+./bin/turnino admin reset --data-dir ./data --confirm
+# con Go
+go run admin reset --data-dir ./data --confirm
+```
+
+Con Docker usare rispettivamente:
+
+```sh
+docker compose run --rm turnino admin init --data-dir /data
+docker compose stop turnino
+docker compose run --rm turnino admin reset --data-dir /data --confirm
+docker compose up -d
+```
+
+`TURNINO_ADMIN_TOKEN` rimane la modalità avanzata per bootstrap automatizzati: va impostata soltanto con un database nuovo, rimossa dopo il primo avvio e custodita come segreto. La procedura pubblica completa è in `docs/administration.md`.
+
+## Provare le API con REST Client
+
+Per provare gli endpoint amministrativi con REST Client, copiare `.env.example` in `.env` e inserire come `TURNINO_ADMIN_TOKEN` la chiave generata da `admin init`. Il file `.env` è escluso da Git. Per esportarne i valori e avviare Turnino:
+
+```sh
 set -a
 . ./.env
 set +a
 make dev
 ```
 
-Turnino salva soltanto l'hash SHA-256 nel database. Conservare il valore originale in un password manager: servirà per amministrare l'installazione. Dopo il bootstrap la variabile può essere rimossa dall'ambiente del server, ma questo non sostituisce né recupera la credenziale già registrata.
+La variabile in questo caso serve al client REST e non deve necessariamente essere esportata nel processo Turnino. Turnino salva soltanto l'hash SHA-256 della chiave nel database.
 
 Il file `api/turnino.rest` è compatibile con l'estensione VS Code `humao.rest-client` e legge `TURNINO_ADMIN_TOKEN` dal file `.env` mediante `{{$dotenv TURNINO_ADMIN_TOKEN}}`. Aprire il file ed eseguire nell'ordine:
 
@@ -311,7 +350,7 @@ TURNINO_ADMIN_TOKEN=
 - Module path: `github.com/fvlgnn/turnino`
 - Licenza: `AGPL-3.0-only`
 - Nome definitivo: `Turnino`
-- Bootstrap amministratore: impostare `TURNINO_ADMIN_TOKEN` soltanto quando il database non contiene ancora la credenziale; conservarne il valore originale fuori dal repository.
+- Bootstrap amministratore: preferire `turnino admin init`; usare `TURNINO_ADMIN_TOKEN` soltanto per automazione su un database nuovo e conservarne il valore fuori dal repository.
 
 ## Pubblicare una release
 

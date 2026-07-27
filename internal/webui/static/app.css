@@ -1007,3 +1007,29 @@ th {
     color: #fff;
   }
 }
+
+.setup-commands {
+  margin-top: 1.25rem;
+}
+
+.setup-commands h2 {
+  margin-bottom: .4rem;
+  font-size: 1rem;
+}
+
+.setup-commands pre {
+  overflow-x: auto;
+  padding: .8rem;
+  border-radius: .55rem;
+  background: #101713;
+  color: #e7f0eb;
+}
+
+.admin-security {
+  margin-top: 1rem;
+}
+
+.admin-security summary {
+  cursor: pointer;
+  font-weight: 700;
+}

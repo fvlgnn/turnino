@@ -34,6 +34,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Opt-in custom-number calls for manual paper dispensers, with range validation and atomic queue synchronization.
 - Last-call repeat operations that emit a fresh SSE notification without advancing the queue.
 - Localized About / Source page with version, copyright, AGPL license and repository links.
+- Guided administrator setup with `admin init`, one-time key display, in-app key rotation, session invalidation and documented offline recovery.
+- Public administration guide covering native and Docker setup, advanced environment bootstrap and the HTTP/HTTPS infrastructure boundary.
+- Configuration guide explaining `.env` loading, data-directory precedence and isolated native, Go, Compose and Docker datasets.
 
 ### Fixed
 
