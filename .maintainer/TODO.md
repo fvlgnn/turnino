@@ -55,3 +55,4 @@
 
 - [ ] Vedi se possibile migliorare facilità di gestione caller (per registrazione, in una situazione reale potrebbe essere complicato registrare con token lo sportello)
 - [ ] Valutare un fallback polling solo se emerge la necessità di supportare browser senza `EventSource`; SSE resta il trasporto principale.
+- [ ] Variabile TURNINO_LOG_LEVEL
