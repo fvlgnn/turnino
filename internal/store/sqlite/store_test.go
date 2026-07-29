@@ -34,8 +34,31 @@ func TestOpenAppliesMigrationsOnce(t *testing.T) {
 	if err := store.db.QueryRowContext(ctx, "SELECT count(*) FROM schema_migrations").Scan(&migrations); err != nil {
 		t.Fatalf("count migrations: %v", err)
 	}
-	if migrations != 4 {
-		t.Fatalf("migration count = %d, want 4", migrations)
+	if migrations != 1 {
+		t.Fatalf("migration count = %d, want 1", migrations)
+	}
+	for table, unwanted := range map[string]map[string]bool{
+		"queues": {"current_value": true, "sequence_size": true},
+		"calls":  {"sequence_value": true},
+	} {
+		rows, err := store.db.QueryContext(ctx, "PRAGMA table_info("+table+")")
+		if err != nil {
+			t.Fatalf("inspect %s schema: %v", table, err)
+		}
+		for rows.Next() {
+			var cid, notNull, primaryKey int
+			var name, columnType string
+			var defaultValue any
+			if err := rows.Scan(&cid, &name, &columnType, &notNull, &defaultValue, &primaryKey); err != nil {
+				rows.Close()
+				t.Fatalf("scan %s schema: %v", table, err)
+			}
+			if unwanted[name] {
+				rows.Close()
+				t.Fatalf("%s still contains legacy column %q", table, name)
+			}
+		}
+		rows.Close()
 	}
 }
 
@@ -147,11 +170,11 @@ func TestCallCustomSynchronizesQueueWhenEnabled(t *testing.T) {
 		t.Fatalf("SetQueueCustomCalls() error = %v", err)
 	}
 
-	call, err := store.CallCustom(ctx, queue.ID, 37, tokenHash)
+	call, err := store.CallCustom(ctx, queue.ID, "A37", tokenHash)
 	if err != nil {
 		t.Fatalf("CallCustom() error = %v", err)
 	}
-	if call.Number != "A37" || call.SequenceValue != 37 || call.Kind != domain.CallKindManual {
+	if call.Number != "A37" || call.Position != 37 || call.Kind != domain.CallKindManual {
 		t.Fatalf("custom call = %#v", call)
 	}
 	next, err := store.CallNext(ctx, queue.ID, tokenHash)
@@ -166,14 +189,108 @@ func TestCallCustomSynchronizesQueueWhenEnabled(t *testing.T) {
 func TestCallCustomRequiresEnablementAndValidRange(t *testing.T) {
 	store, queue, tokenHash := testStore(t, 0, 99)
 	ctx := context.Background()
-	if _, err := store.CallCustom(ctx, queue.ID, 37, tokenHash); !errors.Is(err, domain.ErrCustomCallsDisabled) {
+	if _, err := store.CallCustom(ctx, queue.ID, "A37", tokenHash); !errors.Is(err, domain.ErrCustomCallsDisabled) {
 		t.Fatalf("disabled CallCustom() error = %v, want ErrCustomCallsDisabled", err)
 	}
 	if err := store.SetQueueCustomCalls(ctx, queue.ID, true); err != nil {
 		t.Fatalf("SetQueueCustomCalls() error = %v", err)
 	}
-	if _, err := store.CallCustom(ctx, queue.ID, 100, tokenHash); !errors.Is(err, domain.ErrSequenceOutOfRange) {
+	if _, err := store.CallCustom(ctx, queue.ID, "A100", tokenHash); !errors.Is(err, domain.ErrSequenceOutOfRange) {
 		t.Fatalf("out-of-range CallCustom() error = %v, want ErrSequenceOutOfRange", err)
+	}
+}
+
+func TestProgressiveQueueAdvancesWrapsAndAcceptsCustomNumber(t *testing.T) {
+	ctx := context.Background()
+	store, err := Open(ctx, filepath.Join(t.TempDir(), "turnino.db"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	t.Cleanup(func() { store.Close() })
+	queue, err := store.CreateQueue(ctx, domain.CreateQueueParams{
+		Name: "Progressive", NumberingMode: domain.NumberingModeProgressive,
+		AlphabeticStart: "A", AlphabeticEnd: "B", Digits: 1,
+		MinValue: 0, MaxValue: 1, AllowCustomCalls: true,
+	})
+	if err != nil {
+		t.Fatalf("CreateQueue() error = %v", err)
+	}
+	tokenHash := sha256.Sum256([]byte("progressive-counter"))
+	if _, err := store.CreateCounter(ctx, "Counter", tokenHash[:]); err != nil {
+		t.Fatalf("CreateCounter() error = %v", err)
+	}
+	for index, want := range []string{"A0", "A1", "B0", "B1", "A0"} {
+		call, err := store.CallNext(ctx, queue.ID, tokenHash[:])
+		if err != nil || call.Number != want {
+			t.Fatalf("CallNext() #%d = %q, %v; want %q", index+1, call.Number, err, want)
+		}
+	}
+	custom, err := store.CallCustom(ctx, queue.ID, "b1", tokenHash[:])
+	if err != nil || custom.Number != "B1" {
+		t.Fatalf("CallCustom() = %q, %v; want B1", custom.Number, err)
+	}
+	next, err := store.CallNext(ctx, queue.ID, tokenHash[:])
+	if err != nil || next.Number != "A0" {
+		t.Fatalf("CallNext() after B1 = %q, %v; want A0", next.Number, err)
+	}
+	previous, err := store.CallPrevious(ctx, queue.ID, tokenHash[:])
+	if err != nil || previous.Number != "B1" || previous.Kind != domain.CallKindPrevious {
+		t.Fatalf("CallPrevious() after A0 = %#v, %v; want B1", previous, err)
+	}
+}
+
+func TestQueuePolicyChangePreservesCompatibleNumberAndRequiresResetOtherwise(t *testing.T) {
+	ctx := context.Background()
+	store, queue, tokenHash := testStore(t, 0, 99)
+	if _, err := store.CallCustom(ctx, queue.ID, "A37", tokenHash); !errors.Is(err, domain.ErrCustomCallsDisabled) {
+		t.Fatalf("disabled CallCustom() error = %v", err)
+	}
+	for range 38 {
+		if _, err := store.CallNext(ctx, queue.ID, tokenHash); err != nil {
+			t.Fatalf("CallNext() error = %v", err)
+		}
+	}
+	compatible := domain.CreateQueueParams{
+		Name: "General", Prefix: "A", Digits: 2, MinValue: 20, MaxValue: 99,
+	}
+	updated, err := store.UpdateQueuePolicy(ctx, queue.ID, compatible, false)
+	if err != nil || updated.CurrentNumber() != "A37" {
+		t.Fatalf("compatible UpdateQueuePolicy() current = %q, error = %v", updated.CurrentNumber(), err)
+	}
+	incompatible := domain.CreateQueueParams{
+		Name: "General", NumberingMode: domain.NumberingModeProgressive,
+		AlphabeticStart: "B", AlphabeticEnd: "C", Digits: 2, MinValue: 0, MaxValue: 99,
+	}
+	if _, err := store.UpdateQueuePolicy(ctx, queue.ID, incompatible, false); !errors.Is(err, domain.ErrPolicyResetRequired) {
+		t.Fatalf("incompatible UpdateQueuePolicy() error = %v, want ErrPolicyResetRequired", err)
+	}
+	updated, err = store.UpdateQueuePolicy(ctx, queue.ID, incompatible, true)
+	if err != nil || updated.CurrentPosition != -1 {
+		t.Fatalf("confirmed UpdateQueuePolicy() position = %d, error = %v", updated.CurrentPosition, err)
+	}
+	call, err := store.CallNext(ctx, queue.ID, tokenHash)
+	if err != nil || call.Number != "B00" {
+		t.Fatalf("CallNext() after reset = %q, %v; want B00", call.Number, err)
+	}
+}
+
+func TestCounterCanResetQueueWithoutDeletingHistory(t *testing.T) {
+	ctx := context.Background()
+	store, queue, tokenHash := testStore(t, 0, 99)
+	if _, err := store.CallNext(ctx, queue.ID, tokenHash); err != nil {
+		t.Fatalf("CallNext() error = %v", err)
+	}
+	reset, err := store.ResetQueue(ctx, queue.ID, tokenHash)
+	if err != nil || reset.CurrentPosition != -1 {
+		t.Fatalf("ResetQueue() position = %d, error = %v", reset.CurrentPosition, err)
+	}
+	records, err := store.ListRecentCallRecords(ctx, 10)
+	if err != nil || len(records) != 1 {
+		t.Fatalf("ListRecentCallRecords() count = %d, error = %v; want 1", len(records), err)
+	}
+	call, err := store.CallNext(ctx, queue.ID, tokenHash)
+	if err != nil || call.Number != "A00" {
+		t.Fatalf("CallNext() after reset = %q, %v; want A00", call.Number, err)
 	}
 }
 
@@ -188,15 +305,15 @@ func TestRecallLastRepeatsWithoutAdvancingQueue(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RecallLast() error = %v", err)
 	}
-	if recalled.Number != first.Number || recalled.SequenceValue != first.SequenceValue || recalled.Kind != domain.CallKindRecall {
+	if recalled.Number != first.Number || recalled.Position != first.Position || recalled.Kind != domain.CallKindRecall {
 		t.Fatalf("recalled call = %#v, first = %#v", recalled, first)
 	}
 	next, err := store.CallNext(ctx, queue.ID, tokenHash)
 	if err != nil {
 		t.Fatalf("CallNext() after recall error = %v", err)
 	}
-	if next.SequenceValue != first.SequenceValue+1 {
-		t.Fatalf("sequence after recall = %d, want %d", next.SequenceValue, first.SequenceValue+1)
+	if next.Position != first.Position+1 {
+		t.Fatalf("position after recall = %d, want %d", next.Position, first.Position+1)
 	}
 }
 
@@ -241,8 +358,8 @@ func TestCallNextRollsBackForUnavailableCounter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CallNext() after rollback error = %v", err)
 	}
-	if call.SequenceValue != 0 {
-		t.Fatalf("sequence after rollback = %d, want 0", call.SequenceValue)
+	if call.Position != 0 {
+		t.Fatalf("position after rollback = %d, want 0", call.Position)
 	}
 }
 
@@ -263,7 +380,7 @@ func TestCallNextIsAtomicUnderConcurrency(t *testing.T) {
 				errs <- err
 				return
 			}
-			values <- call.SequenceValue
+			values <- call.Position
 		}()
 	}
 	wg.Wait()
@@ -313,12 +430,12 @@ func TestRevokeCounterRejectsTokenWithoutConsumingNumber(t *testing.T) {
 	if _, err := store.CallNext(ctx, queue.ID, newTokenHash[:]); !errors.Is(err, domain.ErrCounterUnavailable) {
 		t.Fatalf("CallNext() for revoked counter after rotation error = %v, want ErrCounterUnavailable", err)
 	}
-	var currentValue int
-	if err := store.db.QueryRowContext(ctx, "SELECT current_value FROM queues WHERE id = ?", queue.ID).Scan(&currentValue); err != nil {
-		t.Fatalf("read queue current value: %v", err)
+	var currentPosition int
+	if err := store.db.QueryRowContext(ctx, "SELECT current_position FROM queues WHERE id = ?", queue.ID).Scan(&currentPosition); err != nil {
+		t.Fatalf("read queue current position: %v", err)
 	}
-	if currentValue != -1 {
-		t.Fatalf("current value after rejected calls = %d, want -1", currentValue)
+	if currentPosition != -1 {
+		t.Fatalf("current position after rejected calls = %d, want -1", currentPosition)
 	}
 	if err := store.ReactivateCounter(ctx, 1, newTokenHash[:]); err != nil {
 		t.Fatalf("ReactivateCounter() error = %v", err)
@@ -327,8 +444,8 @@ func TestRevokeCounterRejectsTokenWithoutConsumingNumber(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CallNext() after reactivation error = %v", err)
 	}
-	if call.SequenceValue != 0 {
-		t.Fatalf("sequence after reactivation = %d, want 0", call.SequenceValue)
+	if call.Position != 0 {
+		t.Fatalf("position after reactivation = %d, want 0", call.Position)
 	}
 }
 
@@ -347,8 +464,8 @@ func TestRotateCounterTokenInvalidatesPreviousToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CallNext() with new token error = %v", err)
 	}
-	if call.SequenceValue != 0 {
-		t.Fatalf("sequence after rejected old token = %d, want 0", call.SequenceValue)
+	if call.Position != 0 {
+		t.Fatalf("position after rejected old token = %d, want 0", call.Position)
 	}
 }
 

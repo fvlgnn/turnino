@@ -25,7 +25,7 @@
       <p class="alert">{{t .Lang "admin.not_configured"}}</p>
       <div class="setup-commands">
         <h2>{{t .Lang "admin.setup_native"}}</h2>
-        <pre><code>./turnino admin init --data-dir ./data</code></pre>
+        <pre><code>./bin/turnino admin init --data-dir ./data</code></pre>
         <h2>{{t .Lang "admin.setup_docker"}}</h2>
         <pre><code>docker compose run --rm turnino admin init --data-dir /data
 docker compose up -d</code></pre>

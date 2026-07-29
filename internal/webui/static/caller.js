@@ -9,8 +9,11 @@
   const tokenSettings = document.querySelector("#caller-token-settings");
   const status = document.querySelector("#caller-status");
   const callButtons = [...document.querySelectorAll(".caller-next")];
+  const previousButtons = [...document.querySelectorAll(".caller-previous")];
   const recallButtons = [...document.querySelectorAll(".caller-recall")];
   const customForms = [...document.querySelectorAll(".caller-custom-form")];
+  const resetButtons = [...document.querySelectorAll(".caller-reset")];
+  const resetDialog = document.querySelector("#caller-reset-dialog");
 
   if (!page || !tokenForm || !tokenInput || !identity || !tokenSettings || !status) {
     return;
@@ -37,7 +40,7 @@
     }
   };
   const setCalling = (calling) => {
-    [...callButtons, ...recallButtons, ...customForms.map((form) => form.querySelector("button"))].forEach((button) => {
+    [...callButtons, ...previousButtons, ...recallButtons, ...resetButtons, ...customForms.map((form) => form.querySelector("button"))].forEach((button) => {
       button.disabled = calling;
     });
   };
@@ -176,19 +179,69 @@
     });
   });
 
+  previousButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const queueElement = button.closest(".caller-queue");
+      if (queueElement) {
+        void performCall(queueElement, `/api/v1/queues/${button.dataset.queueId}/calls/previous`);
+      }
+    });
+  });
+
   customForms.forEach((form) => {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       const queueElement = form.closest(".caller-queue");
-      const input = form.elements.sequence_value;
+      const input = form.elements.number;
       if (!queueElement || !input || !input.reportValidity()) {
         return;
       }
       void performCall(
         queueElement,
         `/api/v1/queues/${form.dataset.queueId}/calls/custom`,
-        {body: {sequence_value: Number.parseInt(input.value, 10)}, custom: true},
+        {body: {number: input.value.trim()}, custom: true},
       );
     });
+  });
+
+  let pendingResetButton = null;
+
+  const resetQueue = async (button) => {
+    const token = storedToken();
+    if (!token) {
+      setStatus(message("missingToken"), "error");
+      return;
+    }
+    setCalling(true);
+    try {
+      const response = await fetch(`/api/v1/queues/${button.dataset.queueId}/reset`, {
+        method: "POST",
+        headers: {Authorization: `Bearer ${token}`},
+      });
+      if (!response.ok) throw new Error("reset failed");
+      const queueElement = button.closest(".caller-queue");
+      const current = queueElement && queueElement.querySelector("[data-current-number]");
+      if (current) current.textContent = message("notStarted");
+      setStatus(message("resetDone"), "success");
+    } catch {
+      setStatus(message("resetFailed"), "error");
+    } finally {
+      setCalling(false);
+    }
+  };
+
+  resetButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      pendingResetButton = button;
+      resetDialog?.showModal();
+    });
+  });
+
+  resetDialog?.addEventListener("close", () => {
+    const button = pendingResetButton;
+    pendingResetButton = null;
+    if (resetDialog.returnValue === "confirm" && button) {
+      void resetQueue(button);
+    }
   });
 })();

@@ -6,7 +6,7 @@ A lightweight, open-source, self-hosted queue calling and display system. Built 
 
 Turnino is the modern rewrite of a queue display system that has run for years on modest hardware, including Raspberry Pi. It keeps the original idea: one server, a browser for each operator, a public monitor, optional counter displays, and a small administration page.
 
-The project is in active alpha development. The Phase 1 operator, administration and live-display workflows are complete and are being consolidated toward the first public v0.1.0 release.
+The project is in active alpha development. Version 0.1.0 established the operator, administration and live-display workflows; progressive queue-numbering policies are now being consolidated for the next release.
 
 ## Principles
 
@@ -18,6 +18,17 @@ Turnino follows the KISS principle: one process, one database, a few browser vie
 - Prefer server-rendered HTML and small amounts of JavaScript.
 - Use Server-Sent Events for live display updates.
 - Add features only when they preserve the core workflow.
+
+## Queue numbering
+
+Turnino supports several queue and ticket-number formats:
+
+- numeric queues such as `00-99` and `000-999`;
+- fixed service prefixes such as `A00-A99`;
+- progressive physical ticket rolls such as `A00-E99`, `A00-J99`, `A00-Z99` and `AA00-ZZ99`;
+- custom alphabetic and numeric ranges, with validated manual-number calls when enabled.
+
+Every policy wraps at its configured boundary and supports next, previous, recall and reset operations. See the [queue-numbering guide](docs/numbering.md) for configuration rules, examples and behavior.
 
 ## Quick start
 
@@ -64,7 +75,7 @@ Turnino combines the English word "turn" with the Italian diminutive suffix "ino
 
 ## Project status
 
-See the [roadmap](docs/roadmap.md), [architecture](docs/architecture.md), [development guide](docs/development.md), [configuration guide](docs/configuration.md), [administration guide](docs/administration.md), [kiosk deployment guide](docs/kiosk.md), [security model](docs/security.md), and [troubleshooting guide](docs/troubleshooting.md). Italian project notes are available in [docs/it/README.md](docs/it/README.md).
+See the [roadmap](docs/roadmap.md), [architecture](docs/architecture.md), [queue-numbering guide](docs/numbering.md), [development guide](docs/development.md), [configuration guide](docs/configuration.md), [administration guide](docs/administration.md), [kiosk deployment guide](docs/kiosk.md), [security model](docs/security.md), and [troubleshooting guide](docs/troubleshooting.md). Italian project notes are available in [docs/it/README.md](docs/it/README.md).
 
 ## License
 

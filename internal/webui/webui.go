@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"embed"
+	"errors"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -34,6 +35,8 @@ type Store interface {
 	UpdateSettings(context.Context, domain.Settings) (domain.Settings, error)
 	ListQueues(context.Context) ([]domain.Queue, error)
 	CreateQueue(context.Context, domain.CreateQueueParams) (domain.Queue, error)
+	UpdateQueuePolicy(context.Context, int64, domain.CreateQueueParams, bool) (domain.Queue, error)
+	ResetQueueAdmin(context.Context, int64) (domain.Queue, error)
 	SetQueueCustomCalls(context.Context, int64, bool) error
 	ListCounters(context.Context) ([]domain.Counter, error)
 	CreateCounter(context.Context, string, []byte) (domain.Counter, error)
@@ -118,6 +121,8 @@ func New(version string, store Store) (http.Handler, error) {
 	mux.HandleFunc("POST /admin/access-key/rotate", application.rotateAdminAccessKey)
 	mux.HandleFunc("POST /admin/settings", application.updateSettings)
 	mux.HandleFunc("POST /admin/queues", application.createQueue)
+	mux.HandleFunc("POST /admin/queues/{queueID}/policy", application.updateQueuePolicy)
+	mux.HandleFunc("POST /admin/queues/{queueID}/reset", application.resetQueue)
 	mux.HandleFunc("POST /admin/queues/{queueID}/custom-calls", application.setQueueCustomCalls)
 	mux.HandleFunc("POST /admin/counters", application.createCounter)
 	mux.HandleFunc("POST /admin/counters/{counterID}/revoke", application.revokeCounter)
@@ -305,28 +310,83 @@ func (a *app) updateSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *app) createQueue(w http.ResponseWriter, r *http.Request) {
-	current, ok := a.authorizeForm(w, r)
+	_, ok := a.authorizeForm(w, r)
 	if !ok {
 		return
 	}
-	digits, digitsErr := strconv.Atoi(r.PostFormValue("digits"))
-	minValue, minErr := strconv.Atoi(r.PostFormValue("min_value"))
-	maxValue, maxErr := strconv.Atoi(r.PostFormValue("max_value"))
-	if digitsErr != nil || minErr != nil || maxErr != nil {
+	params, err := queueParamsFromForm(r)
+	if err != nil {
 		a.redirectAdminError(w, r, a.message(r, "admin.invalid_number_policy"))
 		return
 	}
-	_, err := a.store.CreateQueue(r.Context(), domain.CreateQueueParams{
-		Name: r.PostFormValue("name"), Prefix: r.PostFormValue("prefix"),
-		Digits: digits, MinValue: minValue, MaxValue: maxValue,
-		AllowCustomCalls: r.PostFormValue("allow_custom_calls") == "on",
-	})
+	_, err = a.store.CreateQueue(r.Context(), params)
 	if err != nil {
 		a.redirectAdminError(w, r, err.Error())
 		return
 	}
-	_ = current
 	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+}
+
+func (a *app) updateQueuePolicy(w http.ResponseWriter, r *http.Request) {
+	_, ok := a.authorizeForm(w, r)
+	if !ok {
+		return
+	}
+	queueID, err := parseID(r.PathValue("queueID"))
+	if err != nil {
+		a.redirectAdminError(w, r, a.message(r, "admin.invalid_queue_id"))
+		return
+	}
+	params, err := queueParamsFromForm(r)
+	if err != nil {
+		a.redirectAdminError(w, r, a.message(r, "admin.invalid_number_policy"))
+		return
+	}
+	_, err = a.store.UpdateQueuePolicy(
+		r.Context(), queueID, params, r.PostFormValue("confirm_reset") == "on",
+	)
+	if err != nil {
+		a.redirectAdminError(w, r, err.Error())
+		return
+	}
+	http.Redirect(w, r, "/admin?notice=queue-saved", http.StatusSeeOther)
+}
+
+func (a *app) resetQueue(w http.ResponseWriter, r *http.Request) {
+	_, ok := a.authorizeForm(w, r)
+	if !ok {
+		return
+	}
+	queueID, err := parseID(r.PathValue("queueID"))
+	if err != nil {
+		a.redirectAdminError(w, r, a.message(r, "admin.invalid_queue_id"))
+		return
+	}
+	if r.PostFormValue("confirm_reset") != "on" {
+		a.redirectAdminError(w, r, a.message(r, "queues.reset_confirmation_required"))
+		return
+	}
+	if _, err := a.store.ResetQueueAdmin(r.Context(), queueID); err != nil {
+		a.redirectAdminError(w, r, err.Error())
+		return
+	}
+	http.Redirect(w, r, "/admin?notice=queue-reset", http.StatusSeeOther)
+}
+
+func queueParamsFromForm(r *http.Request) (domain.CreateQueueParams, error) {
+	digits, digitsErr := strconv.Atoi(r.PostFormValue("digits"))
+	minValue, minErr := strconv.Atoi(r.PostFormValue("min_value"))
+	maxValue, maxErr := strconv.Atoi(r.PostFormValue("max_value"))
+	if digitsErr != nil || minErr != nil || maxErr != nil {
+		return domain.CreateQueueParams{}, errors.New("invalid number policy")
+	}
+	return domain.CreateQueueParams{
+		Name: r.PostFormValue("name"), NumberingMode: domain.NumberingMode(r.PostFormValue("numbering_mode")),
+		Prefix: r.PostFormValue("prefix"), AlphabeticStart: r.PostFormValue("alphabetic_start"),
+		AlphabeticEnd: r.PostFormValue("alphabetic_end"), Digits: digits,
+		MinValue: minValue, MaxValue: maxValue,
+		AllowCustomCalls: r.PostFormValue("allow_custom_calls") == "on",
+	}, nil
 }
 
 func (a *app) setQueueCustomCalls(w http.ResponseWriter, r *http.Request) {
@@ -442,8 +502,13 @@ func (a *app) renderDashboard(w http.ResponseWriter, r *http.Request, current se
 	data := a.page(r)
 	data.CSRFToken = current.CSRFToken
 	data.Error = r.URL.Query().Get("error")
-	if r.URL.Query().Get("notice") == "settings-saved" {
+	switch r.URL.Query().Get("notice") {
+	case "settings-saved":
 		data.Notice = a.catalog.text(data.Lang, "settings.saved")
+	case "queue-saved":
+		data.Notice = a.catalog.text(data.Lang, "queues.saved")
+	case "queue-reset":
+		data.Notice = a.catalog.text(data.Lang, "queues.reset_done")
 	}
 	data.Queues = queues
 	data.Counters = counters

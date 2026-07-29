@@ -74,6 +74,9 @@ func TestAdminAndCounterTokenFlow(t *testing.T) {
 	if got := call["number"]; got != "A001" {
 		t.Fatalf("call number = %v, want A001", got)
 	}
+	if _, exposed := call["sequence_value"]; exposed {
+		t.Fatal("call response exposes internal sequence_value")
+	}
 	eventName, eventData := readSSEEvent(t, stream)
 	if eventName != "call" {
 		t.Fatalf("live SSE event = %q, want call", eventName)
@@ -89,13 +92,25 @@ func TestAdminAndCounterTokenFlow(t *testing.T) {
 	if recalled["number"] != "A001" || recalled["kind"] != "recall" {
 		t.Fatalf("recalled call = %#v", recalled)
 	}
-	custom := requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/custom", `{"sequence_value":37}`, counterToken, http.StatusCreated)
+	custom := requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/custom", `{"number":"A037"}`, counterToken, http.StatusCreated)
 	if custom["number"] != "A037" || custom["kind"] != "manual" {
 		t.Fatalf("custom call = %#v", custom)
 	}
 	afterCustom := requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/next", "", counterToken, http.StatusCreated)
 	if afterCustom["number"] != "A038" {
 		t.Fatalf("call after custom number = %#v", afterCustom)
+	}
+	reset := requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/reset", "", counterToken, http.StatusOK)
+	if _, started := reset["current_number"]; started {
+		t.Fatalf("reset queue still has current_number: %#v", reset)
+	}
+	afterReset := requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/next", "", counterToken, http.StatusCreated)
+	if afterReset["number"] != "A001" {
+		t.Fatalf("call after queue reset = %#v", afterReset)
+	}
+	previous := requestJSON(t, http.MethodPost, server.URL+"/queues/"+queueID+"/calls/previous", "", counterToken, http.StatusCreated)
+	if previous["number"] != "A999" || previous["kind"] != "previous" {
+		t.Fatalf("previous call with wrap = %#v", previous)
 	}
 
 	rotated := requestJSON(t, http.MethodPost, server.URL+"/admin/counters/"+counterID+"/token", "", adminToken, http.StatusOK)

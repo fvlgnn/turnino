@@ -6,8 +6,12 @@ Turnino è un sistema eliminacode leggero, open source e self-hosted. Nasce dall
 
 La prima versione comprende:
 
-- code con prefisso, intervallo e numerazione configurabili;
+- code numeriche come `00-99` e `000-999`;
+- code con prefisso fisso, per esempio `A00-A99`;
+- rotoli alfanumerici progressivi come `A00-E99`, `A00-Z99` e `AA00-ZZ99`;
+- intervalli alfabetici e numerici personalizzabili;
 - chiamata automatica del numero successivo;
+- chiamata del numero precedente con aggiornamento del progressivo;
 - chiamata manuale per code collegate a dispenser cartacei;
 - ripetizione dell'ultima chiamata;
 - postazione operatore, monitor pubblico e display del singolo sportello;
@@ -26,6 +30,7 @@ La documentazione tecnica principale è mantenuta in inglese per rendere il prog
 
 - [avvio e panoramica](../../README.md);
 - [configurazione](../configuration.md);
+- [tipologie di code e numerazione](../numbering.md);
 - [amministrazione e recupero accesso](../administration.md);
 - [sviluppo](../development.md);
 - [architettura](../architecture.md);

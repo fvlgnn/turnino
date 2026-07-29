@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Progressive alphanumeric queue policies with one- or two-letter ranges, configurable numeric ranges and automatic wrap.
+- Common numbering presets and advanced policy editing in the administration interface.
+- Confirmed queue reset from both administration and authenticated operator workstations without deleting call history.
+- Previous-number calls that move the queue backwards while keeping the primary next-number action prominent.
+
+### Changed
+
+- Custom calls now accept the complete formatted `number`, allowing operators to change both its alphabetic and numeric parts.
+- Compatible queue-policy changes preserve the current number; incompatible changes require an explicit reset confirmation.
+- The alpha SQLite schema has been consolidated into one initial migration. Databases created by version 0.1.0 must be recreated.
 
 ## [0.1.0] - 2026-07-29
 

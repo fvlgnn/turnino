@@ -29,6 +29,28 @@ go run ./cmd/turnino --data-dir ./data-dev
 
 Per caricare tutto `.env` nella shell usare `set -a; . ./.env; set +a`. Docker Compose legge `.env`, ma il Compose standard usa sempre `/data` nel container e il volume nominato `turnino-data`. Gli esempi per volume separato e bind mount sono in `docs/configuration.md`.
 
+### Ricreare il database dopo il consolidamento alpha dello schema
+
+Le migrazioni sono state consolidate in `0001_initial.sql`. Un database di sviluppo creato con lo schema precedente non è aggiornabile automaticamente. Fermare Turnino e conservarne una copia prima di ricrearlo:
+
+```bash
+mkdir -p data/alpha-schema-backup
+mv data/turnino.db data/alpha-schema-backup/
+mv data/turnino.db-wal data/alpha-schema-backup/ 2>/dev/null || true
+mv data/turnino.db-shm data/alpha-schema-backup/ 2>/dev/null || true
+make dev
+```
+
+I comandi `mv` conservano insieme il vecchio database e gli eventuali file WAL e SHM. Per Docker Compose, dopo aver esportato ciò che serve:
+
+```bash
+docker compose down
+docker compose down --volumes
+docker compose up --build
+```
+
+`docker compose down --volumes` elimina il volume dati e quindi è distruttivo.
+
 ## Inizializzare l'amministrazione
 
 Con Turnino fermo:
@@ -98,7 +120,7 @@ Non spostare valori reali in `api/turnino.rest`, perché quel file è versionato
 
 Per provare il flusso dal browser, registrare uno sportello nell'amministrazione, copiare il token mostrato una sola volta, aprire <http://localhost:8080/caller> e salvarlo nel browser. Il Caller conserva il token in `localStorage`. Per sostituirlo basta salvare il nuovo valore; prima di dismettere una postazione, revocarlo dall'amministrazione e cancellare i dati del sito dal browser. Rotazione e revoca rendono immediatamente inutilizzabile il valore precedentemente salvato.
 
-La richiamata usa `POST /api/v1/queues/{id}/calls/recall`: ripete l'ultima chiamata effettuata dalla stessa postazione sulla stessa coda, registra un evento di tipo `recall` e non modifica il progressivo. La chiamata personalizzata usa `POST /api/v1/queues/{id}/calls/custom` con `{"sequence_value": 37}`; è accettata solo se l'admin ha abilitato la funzione sulla coda, valida l'intervallo, registra un evento `manual` e sincronizza il progressivo, così la chiamata automatica successiva continua da 38. Vedere `api/turnino.rest`.
+La richiamata usa `POST /api/v1/queues/{id}/calls/recall`: ripete l'ultima chiamata effettuata dalla stessa postazione sulla stessa coda, registra un evento di tipo `recall` e non modifica il progressivo. La chiamata personalizzata usa `POST /api/v1/queues/{id}/calls/custom` con `{"number":"A37"}`; è accettata solo se l'admin ha abilitato la funzione sulla coda, valida il numero completo rispetto alla politica, registra un evento `manual` e sincronizza il progressivo, così la chiamata automatica successiva continua dal numero seguente. Vedere `api/turnino.rest`.
 
 Aprire <http://localhost:8080/counter-display> dallo stesso browser per provare il display dedicato: usa automaticamente il token del Caller, ricava l'identità dello sportello da `/api/v1/counters/me` e filtra snapshot ed eventi SSE per `counter_id`. Per simulare operatore e display contemporaneamente, tenere Caller e display in due schede affiancate.
 
@@ -222,8 +244,9 @@ ORDER BY version;
 Code e stato della numerazione:
 
 ```sql
-SELECT id, name, prefix, digits,
-       min_value, max_value, current_value,
+SELECT id, name, numbering_mode, prefix,
+       alphabetic_start, alphabetic_end, digits,
+       min_value, max_value, current_position,
        datetime(created_at, 'unixepoch', 'localtime') AS created_at
 FROM queues
 ORDER BY name;
@@ -285,7 +308,7 @@ Ripristinare manualmente la numerazione di una coda allo stato iniziale:
 ```sql
 BEGIN IMMEDIATE;
 UPDATE queues
-SET current_value = min_value - 1
+SET current_position = -1
 WHERE id = 1;
 COMMIT;
 ```
@@ -295,15 +318,17 @@ Inserire una coda di prova rispettando i vincoli dello schema:
 ```sql
 BEGIN IMMEDIATE;
 INSERT INTO queues (
-    name, prefix, digits, min_value, max_value, current_value
+    name, numbering_mode, prefix, digits,
+    min_value, max_value, current_position
 ) VALUES (
-    'Test queue', 'T', 3, 1, 999, 0
+    'Test queue', 'fixed', 'T', 3,
+    1, 999, -1
 );
 SELECT last_insert_rowid() AS queue_id;
 COMMIT;
 ```
 
-Per il `current_value` iniziale usare sempre `min_value - 1`: nell'esempio `1 - 1 = 0`.
+Creare e modificare le code dall'interfaccia o dall'API quando possibile. In un inserimento SQL manuale, `current_position` parte da `-1`; la dimensione della sequenza viene calcolata dalla politica e non è memorizzata.
 
 Disabilitare manualmente uno sportello, solo per emergenza:
 

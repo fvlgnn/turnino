@@ -7,6 +7,7 @@
     <meta name="color-scheme" content="light dark">
     <title>{{t .Lang "common.administration"}} · {{.Settings.InstallationName}}</title>
     <link rel="stylesheet" href="/static/app.css">
+    <script src="/static/admin.js" defer></script>
   </head>
   <body class="admin-body">
     <header class="topbar">
@@ -59,29 +60,57 @@
         <article class="panel">
           <h2>{{t .Lang "queues.title"}}</h2>
           {{if .Queues}}
-          <div class="table-wrap"><table>
-            <thead><tr><th>{{t .Lang "queues.name"}}</th><th>{{t .Lang "queues.number"}}</th><th>{{t .Lang "queues.range"}}</th><th>{{t .Lang "queues.custom_calls"}}</th></tr></thead>
-            <tbody>{{range .Queues}}<tr>
-              <td>{{.Name}}</td>
-              <td>{{if lt .CurrentValue .MinValue}}{{t $.Lang "queues.not_started"}}{{else}}{{printf "%s%0*d" .Prefix .Digits .CurrentValue}}{{end}}</td>
-              <td>{{.MinValue}}–{{.MaxValue}} ({{.Digits}} {{t $.Lang "queues.digits"}})</td>
-              <td>
-                <form method="post" action="/admin/queues/{{.ID}}/custom-calls">
-                  <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
-                  <input type="hidden" name="enabled" value="{{if .AllowCustomCalls}}false{{else}}true{{end}}">
-                  <button class="secondary compact-button" type="submit">{{if .AllowCustomCalls}}{{t $.Lang "queues.disable"}}{{else}}{{t $.Lang "queues.enable"}}{{end}}</button>
-                </form>
-              </td>
-            </tr>{{end}}</tbody>
-          </table></div>
+          <div class="queue-policy-list">{{range .Queues}}
+            <details class="queue-policy">
+              <summary><strong>{{.Name}}</strong> · {{if .CurrentNumber}}{{.CurrentNumber}}{{else}}{{t $.Lang "queues.not_started"}}{{end}} · {{.FirstNumber}}-{{.LastNumber}}</summary>
+              <form method="post" action="/admin/queues/{{.ID}}/policy" class="form-grid queue-policy-form">
+                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                <label>{{t $.Lang "queues.name"}}<input name="name" value="{{.Name}}" required maxlength="100"></label>
+                <label>{{t $.Lang "queues.numbering_mode"}}
+                  <select name="numbering_mode">
+                    <option value="fixed"{{if eq .NumberingMode "fixed"}} selected{{end}}>{{t $.Lang "queues.fixed"}}</option>
+                    <option value="progressive"{{if eq .NumberingMode "progressive"}} selected{{end}}>{{t $.Lang "queues.progressive"}}</option>
+                  </select>
+                </label>
+                <label data-fixed-prefix-field>{{t $.Lang "queues.prefix"}}<input name="prefix" value="{{.Prefix}}" maxlength="3"></label>
+                <label data-alphabetic-field>{{t $.Lang "queues.alpha_start"}}<input name="alphabetic_start" value="{{.AlphabeticStart}}" maxlength="2"></label>
+                <label data-alphabetic-field>{{t $.Lang "queues.alpha_end"}}<input name="alphabetic_end" value="{{.AlphabeticEnd}}" maxlength="2"></label>
+                <label>{{t $.Lang "queues.digits"}}<input name="digits" type="number" value="{{.Digits}}" min="1" max="6" required></label>
+                <label>{{t $.Lang "queues.first"}}<input name="min_value" type="number" value="{{.MinValue}}" min="0" required></label>
+                <label>{{t $.Lang "queues.last"}}<input name="max_value" type="number" value="{{.MaxValue}}" min="0" required></label>
+                <label class="checkbox"><input name="allow_custom_calls" type="checkbox"{{if .AllowCustomCalls}} checked{{end}}> {{t $.Lang "queues.allow_custom_calls"}}</label>
+                <label class="checkbox"><input name="confirm_reset" type="checkbox"> {{t $.Lang "queues.reset_if_incompatible"}}</label>
+                <button type="submit">{{t $.Lang "queues.save_policy"}}</button>
+              </form>
+              <form method="post" action="/admin/queues/{{.ID}}/reset" class="stack queue-reset-form">
+                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                <label class="checkbox"><input name="confirm_reset" type="checkbox" required> {{t $.Lang "queues.reset_confirm"}}</label>
+                <button class="danger compact-button" type="submit">{{t $.Lang "queues.reset"}}</button>
+              </form>
+            </details>
+          {{end}}</div>
           {{else}}<p class="muted">{{t .Lang "queues.empty"}}</p>{{end}}
           <h3>{{t .Lang "queues.add"}}</h3>
           <form method="post" action="/admin/queues" class="form-grid">
             <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
             <label>{{t .Lang "queues.name"}}<input name="name" required maxlength="100"></label>
-            <label>{{t .Lang "queues.prefix"}}<input name="prefix" maxlength="3" placeholder="A"></label>
+            <label>{{t .Lang "queues.preset"}}
+              <select data-numbering-preset>
+                <option value="numeric-2">{{t .Lang "queues.preset_numeric_2"}}</option>
+                <option value="numeric-3" selected>{{t .Lang "queues.preset_numeric_3"}}</option>
+                <option value="a-e">A00-E99</option>
+                <option value="a-j">A00-J99</option>
+                <option value="custom">{{t .Lang "queues.preset_custom"}}</option>
+              </select>
+            </label>
+            <label>{{t .Lang "queues.numbering_mode"}}
+              <select name="numbering_mode"><option value="fixed">{{t .Lang "queues.fixed"}}</option><option value="progressive">{{t .Lang "queues.progressive"}}</option></select>
+            </label>
+            <label data-fixed-prefix-field>{{t .Lang "queues.prefix"}}<input name="prefix" maxlength="3" placeholder="A"></label>
+            <label data-alphabetic-field>{{t .Lang "queues.alpha_start"}}<input name="alphabetic_start" maxlength="2"></label>
+            <label data-alphabetic-field>{{t .Lang "queues.alpha_end"}}<input name="alphabetic_end" maxlength="2"></label>
             <label>{{t .Lang "queues.digits"}}<input name="digits" type="number" value="3" min="1" max="6" required></label>
-            <label>{{t .Lang "queues.first"}}<input name="min_value" type="number" value="1" min="0" required></label>
+            <label>{{t .Lang "queues.first"}}<input name="min_value" type="number" value="0" min="0" required></label>
             <label>{{t .Lang "queues.last"}}<input name="max_value" type="number" value="999" min="0" required></label>
             <label class="checkbox"><input name="allow_custom_calls" type="checkbox"> {{t .Lang "queues.allow_custom_calls"}}</label>
             <button type="submit">{{t .Lang "queues.add"}}</button>

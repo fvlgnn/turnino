@@ -27,20 +27,37 @@
 - [x] Consistent SQLite backup and call-history export
 - [x] Reproducible demonstration database containing only synthetic data and unusable credentials
 
-## Phase 2 - Adaptation and polish
+## Phase 2 - Progressive numbering (completed)
 
-- Progressive alphanumeric numbering policies for physical ticket dispensers (for example `A00–Z99`)
-- Configurable themes, logo and banner
-- Daily or manual numbering reset
-- Backup download from the administration UI, retention policy and filtered exports
-- Optional browser speech synthesis
-- Installable operator PWA
-- Accessibility review and kiosk-mode refinements
+- [x] Preserve fixed-prefix numeric queues as the simple, backward-compatible mode
+- [x] Add progressive alphabetic components for physical ticket dispensers, such as `A00-Z99` and `AA00-ZZ99`
+- [x] Offer presets for common physical rolls and advanced custom ranges
+- [x] Allow queue policies to be corrected without recreating the queue
+- [x] Wrap to the beginning at the end of the configured range
+- [x] Use human-readable formatted numbers for custom calls
+- [x] Provide an explicit operator reset without deleting call history
+- [x] Preserve atomic allocation and stable materialized call history
+
+## Phase 3 - Presentation and installation identity
+
+- Predefined color themes
+- Configurable text banner
+- Detailed call-sound volume
+- Validated installation logo with defined persistence and backup behavior
+
+## Phase 4 - Optional operator client
+
+- Keep the browser Caller as the default operator interface
+- Explore a minimal desktop client after stabilizing the Caller API
+- Prefer a WebView wrapper for the shortest implementation path
+- Consider Fyne as a Go learning exercise when the additional GUI and packaging maintenance are justified
 
 ## Future phases, only with validated demand
 
 - Additional display and audio settings
+- Explicit call-history retention, export and cleanup tools
 - Ticket issuing and QR codes
+- Hardware ticket dispensers and printer adapters, only after validating specific devices
 - Priority and transfer workflows
 - Multiple services per counter
 - Advanced analytics

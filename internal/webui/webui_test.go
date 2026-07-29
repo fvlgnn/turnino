@@ -276,7 +276,7 @@ func TestLanguageSelectionPersistsCookie(t *testing.T) {
 		t.Fatal("language cookie did not select Italian")
 	}
 	for _, expected := range []string{
-		"./turnino admin init --data-dir ./data",
+		"./bin/turnino admin init --data-dir ./data",
 		"docker compose run --rm turnino admin init --data-dir /data",
 	} {
 		if !strings.Contains(response.Body.String(), expected) {
