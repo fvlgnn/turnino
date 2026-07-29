@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+
+## [0.1.0] - 2026-07-29
+
 ### Added
 
 - Self-hosted queue calling system distributed as a single Go binary and Docker image.
@@ -26,4 +29,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Turnino is alpha software and is intended for trusted local networks or deployment behind properly configured HTTPS infrastructure.
 - Administration uses one installation-wide access key. Users and roles are not currently supported.
 
-[Unreleased]: https://github.com/fvlgnn/turnino/commits/main
+
+[Unreleased]: https://github.com/fvlgnn/turnino/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/fvlgnn/turnino/releases/tag/v0.1.0

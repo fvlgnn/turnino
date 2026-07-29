@@ -377,6 +377,37 @@ Aggiungere o aggiornare in fondo al changelog i link di confronto:
 [0.1.0]: https://github.com/fvlgnn/turnino/releases/tag/v0.1.0
 ```
 
+Quando esistono più release, ogni collegamento confronta il tag precedente con quello della versione a cui si riferisce. `Unreleased` parte sempre dall'ultima versione pubblicata e arriva a `HEAD`. La prima versione non ha un tag precedente, quindi collega direttamente la propria pagina:
+
+```markdown
+## [Unreleased]
+
+## [0.2.1] - 2026-09-15
+
+### Fixed
+
+- Correzione pubblicata nella patch.
+
+## [0.2.0] - 2026-09-01
+
+### Added
+
+- Funzionalità introdotta nella seconda release.
+
+## [0.1.0] - 2026-07-29
+
+### Added
+
+- Prima versione pubblica.
+
+[Unreleased]: https://github.com/fvlgnn/turnino/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/fvlgnn/turnino/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/fvlgnn/turnino/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/fvlgnn/turnino/releases/tag/v0.1.0
+```
+
+Per esempio, il link `[0.2.1]` mostra soltanto le modifiche comprese tra `v0.2.0` e `v0.2.1`; non confronta la versione con `HEAD`.
+
 Verificare localmente che tag e note della versione siano validi ed estraibili:
 
 ```sh
@@ -388,7 +419,7 @@ Committare il changelog, pubblicarlo su `main` e attendere che la CI termini cor
 
 ```sh
 git add CHANGELOG.md
-git commit -m "docs: prepare v0.1.0 release"
+git commit -m "chore: prepare v0.1.0 release"
 git push origin main
 ```
 
@@ -399,7 +430,7 @@ git tag -a v0.1.0 -m "Turnino v0.1.0"
 git push origin v0.1.0
 ```
 
-Il push del tag `v*` avvia automaticamente la workflow `Release`, che:
+Il push del tag `v*` avvia automaticamente il workflow `Release`, che:
 
 - crea gli archivi binari per Linux, macOS e Windows;
 - estrae da `CHANGELOG.md` la sezione della versione;
