@@ -6,7 +6,7 @@ A lightweight, open-source, self-hosted queue calling and display system. Built 
 
 Turnino is the modern rewrite of a queue display system that has run for years on modest hardware, including Raspberry Pi. It keeps the original idea: one server, a browser for each operator, a public monitor, optional counter displays, and a small administration page.
 
-The project is in active alpha development. Version 0.1.0 established the operator, administration and live-display workflows; progressive queue-numbering policies are now being consolidated for the next release.
+The project is in active alpha development. Version 0.1.0 established the operator, administration and live-display workflows. Current development adds progressive queue numbering and more complete queue controls.
 
 ## Principles
 
@@ -45,7 +45,7 @@ Save the generated access key: it is shown only once. See the [administration gu
 Open <http://localhost:8080>. The health endpoint is available at <http://localhost:8080/healthz>.
 Project, license and source information is available at <http://localhost:8080/about>.
 The administration interface is available at <http://localhost:8080/admin> after administrator access has been initialized.
-The operator interface is available at <http://localhost:8080/caller>. Paste the token issued when its counter was registered; the token remains in that browser and authenticates automatic calls and recalls. Queues backed by a separate manual paper dispenser can explicitly enable validated custom-number calls from the administration page.
+The operator interface is available at <http://localhost:8080/caller>. Paste the token issued when its counter was registered; the token remains in that browser and authenticates queue operations. Queues backed by a separate manual paper dispenser can explicitly enable validated custom-number calls from the administration page.
 The dedicated counter display is available at <http://localhost:8080/counter-display>. Open it from the Caller to reuse the counter token saved in the same browser; it then shows only calls made by that counter.
 The autonomous live public monitor is available at <http://localhost:8080/monitor>. During development, open `/monitor?test=1` to expose sound/fullscreen controls and launch a Caller tab from the same browser. See the [kiosk deployment guide](docs/kiosk.md) for Windows Edge and Raspberry Pi Chromium autostart.
 
@@ -57,7 +57,7 @@ docker compose run --rm turnino admin init --data-dir /data
 docker compose up -d
 ```
 
-Runtime data, including the automatically migrated `turnino.db` database, is written to `./data` for native development and to the `turnino-data` volume with Compose.
+Runtime data, including `turnino.db`, is written to `./data` for native development and to the `turnino-data` volume with Compose. During the current alpha period, the schema may change incompatibly: the `0.2.0` schema requires databases created by `0.1.0` to be recreated. See the [configuration guide](docs/configuration.md).
 
 Maintenance commands create new files and never overwrite an existing destination:
 

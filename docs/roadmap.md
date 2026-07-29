@@ -35,6 +35,7 @@
 - [x] Allow queue policies to be corrected without recreating the queue
 - [x] Wrap to the beginning at the end of the configured range
 - [x] Use human-readable formatted numbers for custom calls
+- [x] Call the previous number while moving the queue backwards
 - [x] Provide an explicit operator reset without deleting call history
 - [x] Preserve atomic allocation and stable materialized call history
 

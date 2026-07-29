@@ -25,10 +25,10 @@ The call-event endpoint sends a recent-call snapshot from SQLite whenever a moni
 
 - **Queue** owns a numbering policy and its current sequence.
 - **Counter** identifies a service desk or operator terminal.
-- **Call** records a number shown at a counter and whether it was automatic, manual, or recalled.
+- **Call** records a number shown at a counter and whether it was automatic, previous, manual, or recalled.
 - **Settings** is a singleton containing the installation name, default language and the small set of public-monitor preferences shared by every browser.
 
-A queue enables custom calls only when it must follow a separate manual paper dispenser. A custom call validates the requested sequence and atomically moves the queue to it. A recall creates a new call event from the latest call for the same queue and counter, but deliberately leaves the queue sequence unchanged.
+A queue enables custom calls only when it must follow a separate manual paper dispenser. A custom call validates the complete formatted number and atomically moves the queue to it. A previous-number call moves the queue backwards, while a recall creates a new event from the latest call for the same queue and counter without changing the queue position.
 
 Number allocation and call creation must occur in one database transaction. A counter's online presence is ephemeral, while its identity and call history are persistent.
 
@@ -56,6 +56,8 @@ The same binary should run natively and in a container. Releases target Linux AM
 ## Persistence and migrations
 
 The application opens `<data-dir>/turnino.db` during startup and applies embedded, ordered SQL migrations before accepting HTTP traffic. Schema changes are recorded in `schema_migrations`; there is no separate migration command or ORM.
+
+During alpha development, migrations may be consolidated before the schema stabilizes. The `0.2.0` schema is intentionally incompatible with databases created by `0.1.0`; those databases must be recreated.
 
 Advancing a queue and recording its call happen in one SQLite transaction. If the queue does not exist or the selected counter is unavailable, the number change is rolled back.
 

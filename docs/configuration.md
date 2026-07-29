@@ -104,6 +104,30 @@ docker run --rm \
 
 The container always sees `/data`; the host sees `./data-dev`. Reuse exactly the same mount for initialization, normal startup, backup and offline reset.
 
+## Alpha database compatibility
+
+The `0.2.0` development cycle consolidated the SQLite schema into one clean initial migration. A database created by `0.1.0` is not compatible and must be recreated after exporting or backing up any data that must be retained.
+
+For a native development database, stop Turnino and preserve all SQLite files together:
+
+```sh
+mkdir -p data/0.1.0-backup
+mv data/turnino.db data/0.1.0-backup/
+mv data/turnino.db-wal data/0.1.0-backup/ 2>/dev/null || true
+mv data/turnino.db-shm data/0.1.0-backup/ 2>/dev/null || true
+./bin/turnino admin init --data-dir ./data
+```
+
+For the standard Docker Compose installation, `docker compose down --volumes` removes the old named data volume. This is destructive, so export or back up required data with `0.1.0` first:
+
+```sh
+docker compose down --volumes
+docker compose run --rm turnino admin init --data-dir /data
+docker compose up -d
+```
+
+This compatibility exception is intentional while Turnino remains alpha. New databases use the consolidated schema directly; future compatibility rules will be documented before the schema is considered stable.
+
 ## Administrator bootstrap variable
 
 The normal first setup is:

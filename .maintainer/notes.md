@@ -388,17 +388,18 @@ Spostare le modifiche da `[Unreleased]` a una sezione della versione in `CHANGEL
 ```markdown
 ## [Unreleased]
 
-## [0.1.0] - YYYY-MM-DD
+## [0.2.0] - YYYY-MM-DD
 
 ### Added
 
-- Prima funzionalità pubblicata.
+- Funzionalità introdotta nella nuova versione.
 ```
 
 Aggiungere o aggiornare in fondo al changelog i link di confronto:
 
 ```markdown
-[Unreleased]: https://github.com/fvlgnn/turnino/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/fvlgnn/turnino/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/fvlgnn/turnino/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/fvlgnn/turnino/releases/tag/v0.1.0
 ```
 
@@ -436,23 +437,23 @@ Per esempio, il link `[0.2.1]` mostra soltanto le modifiche comprese tra `v0.2.0
 Verificare localmente che tag e note della versione siano validi ed estraibili:
 
 ```sh
-sh .github/scripts/release-notes.sh v0.1.0 /tmp/turnino-v0.1.0.md
-cat /tmp/turnino-v0.1.0.md
+sh .github/scripts/release-notes.sh v0.2.0 /tmp/turnino-v0.2.0.md
+cat /tmp/turnino-v0.2.0.md
 ```
 
 Committare il changelog, pubblicarlo su `main` e attendere che la CI termini correttamente:
 
 ```sh
 git add CHANGELOG.md
-git commit -m "chore: prepare v0.1.0 release"
+git commit -m "chore: prepare v0.2.0 release"
 git push origin main
 ```
 
 Solo dopo la CI verde, creare un tag annotato sul commit appena pubblicato:
 
 ```sh
-git tag -a v0.1.0 -m "Turnino v0.1.0"
-git push origin v0.1.0
+git tag -a v0.2.0 -m "Turnino v0.2.0"
+git push origin v0.2.0
 ```
 
 Il push del tag `v*` avvia automaticamente il workflow `Release`, che:
@@ -466,7 +467,7 @@ Controllare l'esecuzione nella scheda **Actions** e poi verificare la release:
 
 ```sh
 gh run list --workflow=release.yml
-gh release view v0.1.0
+gh release view v0.2.0
 ```
 
 Dopo la prima pubblicazione, verificare su GitHub che il package GHCR sia pubblico.
@@ -474,8 +475,8 @@ Dopo la prima pubblicazione, verificare su GitHub che il package GHCR sia pubbli
 Se il tag è sbagliato ma non è ancora stato inviato a GitHub:
 
 ```sh
-git tag -d v0.1.0
-git tag -a v0.1.0 -m "Turnino v0.1.0"
+git tag -d v0.2.0
+git tag -a v0.2.0 -m "Turnino v0.2.0"
 ```
 
 Non spostare o sovrascrivere un tag già pubblicato: creare una nuova versione, per esempio `v0.1.1`.

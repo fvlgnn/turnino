@@ -4,7 +4,7 @@ Turnino è un sistema eliminacode leggero, open source e self-hosted. Nasce dall
 
 ## Funzionalità
 
-La prima versione comprende:
+Le funzionalità attuali comprendono:
 
 - code numeriche come `00-99` e `000-999`;
 - code con prefisso fisso, per esempio `A00-A99`;

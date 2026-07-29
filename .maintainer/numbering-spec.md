@@ -22,7 +22,7 @@ intervallo numerico: 1-999
 A001, A002, A003, ..., A999, A001
 ```
 
-Il prefisso non avanza. Le code esistenti devono migrare automaticamente a questa modalità senza cambiare numeri o comportamento.
+Il prefisso non avanza. Questa modalità conserva il comportamento semplice della numerazione originaria.
 
 ### Parte alfabetica progressiva
 
@@ -62,11 +62,9 @@ Alfanumerico A00-J99
 Personalizzato
 ```
 
-La modalità `Personalizzato` espone intervalli alfabetici e numerici. La sua presentazione definitiva resta da valutare durante il lavoro sull'interfaccia, ma il dominio e la persistenza devono supportarla fin dalla prima implementazione.
+La modalità `Personalizzato` consente di scegliere la modalità e configurare gli intervalli pertinenti. Il prefisso fisso è nascosto nei preset alfabetici per non confonderlo con la parte progressiva del rotolo.
 
 ## Configurazione concettuale
-
-I nomi definitivi di campi e colonne saranno scelti durante l'implementazione.
 
 ```text
 mode                  fixed | progressive
@@ -132,11 +130,12 @@ Esempio con `A-C`, `00-02`:
 A00, A01, A02, B00, B01, B02, C00, C01, C02
 ```
 
-Il successivo è `A00`. Questa scelta rispecchia i rotoli fisici, che ripetono la sequenza, e preserva il comportamento delle code esistenti. Una chiamata personalizzata o il reset manuale permettono all'operatore di riallineare la coda quando necessario.
+Il successivo è `A00`. Questa scelta rispecchia i rotoli fisici, che ripetono la sequenza. Una chiamata personalizzata o il reset manuale permettono all'operatore di riallineare la coda quando necessario.
 
 ## Chiamate e storico
 
 - La chiamata automatica avanza di una sola posizione e registra numero formattato e ordinale nella stessa transazione.
+- La chiamata precedente arretra di una posizione, applica il wrap e registra una nuova chiamata.
 - La richiamata ripete il numero già registrato e non avanza la sequenza.
 - Lo storico conserva la stringa mostrata, quindi resta leggibile anche se in futuro la politica della coda viene modificata.
 - Due chiamate concorrenti non devono ricevere la stessa posizione.
@@ -195,6 +194,7 @@ Casi da coprire con test:
 A00 -> A01
 A99 -> B00
 Z99 -> A00 con wrap
+chiamata precedente da A00 -> Z99 con wrap
 AA99 -> AB00
 AZ99 -> BA00
 ZZ99 -> AA00 con wrap
@@ -204,13 +204,12 @@ due chiamate concorrenti -> due numeri distinti
 reset di una coda -> stato non iniziato e storico invariato
 ```
 
-## Compatibilità e migrazione
+## Compatibilità alpha
 
-- Ogni coda esistente diventa `fixed`.
-- Prefisso, cifre, minimo, massimo e valore corrente restano invariati.
-- Le API e le viste attuali continuano a rappresentare correttamente le code fisse.
-- Le chiamate storiche non vengono riformattate.
-- L'implementazione deve aggiungere una migrazione SQLite incrementale e non riscrivere le migrazioni già pubblicate.
+- La modalità `fixed` conserva la semantica della numerazione originaria.
+- Le API e le viste rappresentano allo stesso modo code fisse e progressive tramite numeri formattati.
+- Lo schema `0.2.0` è consolidato in un'unica migrazione iniziale.
+- I database creati da `0.1.0` devono essere ricreati; non esiste una migrazione incrementale tra le due versioni alpha.
 
 ## Modifica della politica
 
