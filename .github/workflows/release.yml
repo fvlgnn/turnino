@@ -103,6 +103,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v7
         with:
+          pattern: turnino-*
           path: artifacts
           merge-multiple: true
       - name: Extract release notes from changelog
