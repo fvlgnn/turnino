@@ -28,7 +28,7 @@ RUN CGO_ENABLED=0 \
     -o /out/turnino \
     ./cmd/turnino
 
-FROM alpine:3.22
+FROM alpine:3.24
 
 RUN apk add --no-cache ca-certificates tzdata && \
     addgroup -S turnino && \
